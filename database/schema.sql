@@ -1,4 +1,5 @@
 /*Create database*/
+DROP DATABASE IF EXISTS fot_mis;
 CREATE DATABASE IF NOT EXISTS fot_mis;
 USE fot_mis;
 
@@ -62,6 +63,9 @@ CREATE TABLE IF NOT EXISTS course (
     theory_credits INT DEFAULT 1,
     practical_credits INT DEFAULT 1
 );
+ALTER TABLE course
+    ADD COLUMN has_theory BOOLEAN DEFAULT TRUE,
+    ADD COLUMN has_practical BOOLEAN DEFAULT TRUE;
 
 
 /*7.Course Material Table*/

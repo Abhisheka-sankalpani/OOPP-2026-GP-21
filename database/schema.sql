@@ -176,3 +176,75 @@ CREATE TABLE IF NOT EXISTS result (
     FOREIGN KEY (student_id) REFERENCES undergraduate(student_id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
+-- 1 Admin
+INSERT INTO users (user_id, password, first_name, last_name, email, role)
+VALUES( 'admin1','admin123', 'Sunil', 'Perera', 'admin@fot.ruh.ac.lk', 'ADMIN');
+INSERT INTO admin (admin_id) VALUES ('admin1');
+
+-- 5 Lecturers
+INSERT INTO users (user_id,  password, first_name, last_name, email, role) VALUES
+('lec1', 'lec123', 'Kamal', 'Silva', 'kamal@fot.ruh.ac.lk', 'LECTURER'),
+('lec2', 'lec123', 'Nimal', 'Fernando', 'nimal@fot.ruh.ac.lk', 'LECTURER'),
+('lec3', 'lec123', 'Saman', 'Kumara', 'saman@fot.ruh.ac.lk', 'LECTURER'),
+('lec4', 'lec123', 'Ruwan', 'Jayasinghe', 'ruwan@fot.ruh.ac.lk', 'LECTURER'),
+('lec5', 'lec123', 'Amal', 'Dissanayake', 'amal@fot.ruh.ac.lk', 'LECTURER');
+INSERT INTO lecturer (lecturer_id, department) VALUES
+('lec1', 'ICT'), ('lec2', 'ICT'), ('lec3', 'ET'), ('lec4', 'BST'), ('lec5', 'ICT');
+
+-- 4 Technical Officers
+INSERT INTO users (user_id,  password, first_name, last_name, email, role) VALUES
+('to1', 'to123', 'Mahesh', 'Bandara', 'mahesh@fot.ruh.ac.lk', 'TECHNICAL_OFFICER'),
+('to2', 'to123', 'Pradeep', 'Gunawardana', 'pradeep@fot.ruh.ac.lk', 'TECHNICAL_OFFICER'),
+('to3', 'to123', 'Kavinda', 'Senanayake', 'kavinda@fot.ruh.ac.lk', 'TECHNICAL_OFFICER'),
+('to4', 'to123', 'Nuwan', 'Wickramasinghe', 'nuwan@fot.ruh.ac.lk', 'TECHNICAL_OFFICER');
+INSERT INTO technical_officer (to_id, department) VALUES
+('to1', 'ICT'), ('to2', 'ICT'), ('to3', 'ET'), ('to4', 'BST');
+
+-- 20 Undergraduates with repeaters
+INSERT INTO users (user_id, password, first_name, last_name, email, role) VALUES
+('tg1001', 'stu123', 'Kasun', 'Rajapakshe', 'tg1001@fot.ruh.ac.lk', 'STUDENT'),
+('tg1002', 'stu123', 'Gayan', 'Prasanna', 'tg1002@fot.ruh.ac.lk', 'STUDENT'),
+('tg1003', 'stu123', 'Chamara', 'Sampath', 'tg1003@fot.ruh.ac.lk', 'STUDENT'),
+('tg1004', 'stu123', 'Sahan', 'Madushanka', 'tg1004@fot.ruh.ac.lk', 'STUDENT'),
+('tg1005', 'stu123', 'Dilshan', 'Chathuranga', 'tg1005@fot.ruh.ac.lk', 'STUDENT'),
+('tg1006', 'stu123', 'Isuru', 'Kumarasinghe', 'tg1006@fot.ruh.ac.lk', 'STUDENT'),
+('tg1007', 'stu123', 'Sandun', 'Wijesinghe', 'tg1007@fot.ruh.ac.lk', 'STUDENT'),
+('tg1008', 'stu123', 'Nipuna', 'Tharaka', 'tg1008@fot.ruh.ac.lk', 'STUDENT'),
+('tg1009', 'stu123', 'Lakshan', 'Sandaruwan', 'tg1009@fot.ruh.ac.lk', 'STUDENT'),
+('tg1010', 'stu123', 'Dhanushka', 'Ranasinghe', 'tg1010@fot.ruh.ac.lk', 'STUDENT'),
+('tg1011', 'stu123', 'Tharindu', 'Mendis', 'tg1011@fot.ruh.ac.lk', 'STUDENT'),
+('tg1012', 'stu123', 'Dasun', 'Gunawardhana', 'tg1012@fot.ruh.ac.lk', 'STUDENT'),
+('tg1013', 'stu123', 'thesaru', 'perera', 'tg1013@fot.ruh.ac.lk', 'STUDENT'),
+('tg1014', 'stu123', 'Charitha', 'sampath', 'tg1014@fot.ruh.ac.lk', 'STUDENT'),
+('tg1015', 'stu123', 'Nipun', 'Nissanka', 'tg1015@fot.ruh.ac.lk', 'STUDENT'),
+('tg1016', 'stu123', 'Samadhi', 'Mandhira', 'tg1016@fot.ruh.ac.lk', 'STUDENT'),
+('tg1017', 'stu123', 'Buddhika', 'Rajapaksa', 'tg1017@fot.ruh.ac.lk', 'STUDENT'),
+('tg1018', 'stu123', 'Lalantha', 'Kumara', 'tg1018@fot.ruh.ac.lk', 'STUDENT'),
+('tg1019', 'stu123', 'Maheesha', 'Theekshani', 'tg1019@fot.ruh.ac.lk', 'STUDENT'),
+('tg1020', 'stu123', 'Samudhini', 'Sewmini', 'tg1020@fot.ruh.ac.lk', 'STUDENT');
+
+INSERT INTO undergraduate (student_id, reg_no, department, batch, is_repeat) VALUES
+('tg1001', 'TG/2022/1001', 'ICT', '2021/2022', FALSE),
+('tg1002', 'TG/2022/1002', 'ICT', '2021/2022', FALSE),
+('tg1003', 'TG/2022/1003', 'ICT', '2021/2022', FALSE),
+('tg1004', 'TG/2022/1004', 'ICT', '2021/2022', FALSE),
+('tg1005', 'TG/2022/1005', 'ICT', '2021/2022', FALSE),
+('tg1006', 'TG/2022/1006', 'ICT', '2021/2022', FALSE),
+('tg1007', 'TG/2022/1007', 'ICT', '2021/2022', FALSE),
+('tg1008', 'TG/2022/1008', 'ICT', '2021/2022', FALSE),
+('tg1009', 'TG/2022/1009', 'ICT', '2021/2022', FALSE),
+('tg1010', 'TG/2022/1010', 'ICT', '2021/2022', FALSE),
+('tg1011', 'TG/2022/1011', 'ICT', '2021/2022', FALSE),
+('tg1012', 'TG/2022/1012', 'ICT', '2021/2022', FALSE),
+('tg1013', 'TG/2022/1013', 'ICT', '2021/2022', FALSE),
+('tg1014', 'TG/2022/1014', 'ICT', '2021/2022', FALSE),
+('tg1015', 'TG/2022/1015', 'ICT', '2021/2022', FALSE),
+('tg1016', 'TG/2022/1016', 'ICT', '2021/2022', FALSE),
+('tg1017', 'TG/2022/1017', 'ICT', '2021/2022', FALSE),
+('tg1018', 'TG/2022/1018', 'ICT', '2021/2022', FALSE),
+('tg1019', 'TG/2020/1019', 'ICT', '2019/2020', TRUE),  -- Repeat Student 1
+('tg1020', 'TG/2020/1020', 'ICT', '2019/2020', TRUE);  -- Repeat Student 2
+
+-- Sample Course
+INSERT INTO course (course_id, course_name, credit, has_theory, has_practical)
+VALUES ('ICT2132', 'Object Oriented Programming Practicum', 2, TRUE, TRUE);

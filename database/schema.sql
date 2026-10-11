@@ -248,3 +248,18 @@ INSERT INTO undergraduate (student_id, reg_no, department, batch, is_repeat) VAL
 -- Sample Course
 INSERT INTO course (course_id, course_name, credit, has_theory, has_practical)
 VALUES ('ICT2132', 'Object Oriented Programming Practicum', 2, TRUE, TRUE);
+
+INSERT INTO timetable (course_id, department, session_type, day_of_week, start_time, end_time, venue_id) VALUES
+('ICT2113', 'ICT', 'THEORY', 'MONDAY', '09:00:00', '11:00:00', 'LAB-12'),
+('ICT2113', 'ICT', 'PRACTICAL', 'MONDAY', '11:00:00', '01:00:00', 'LAB-12'),
+('ICT2142', 'ICT', 'THEORY', 'TUESDAY', '09:00:00', '10:00:00', 'NEW-LAB'),
+('ICT2142', 'ICT', 'PRACTICAL', 'TUESDAY', '10:00:00', '12:00:00', 'NEW-LAB'),
+('ICT2152', 'ICT', 'THEORY', 'TUESDAY', '01:00:00', '03:00:00', 'LAB-12'),
+('TCS2112', 'ICT', 'TUTORIAL', 'WEDNESDAY', '08:00:00', '09:00:00', 'ICT-HARDWARE-LAB'),
+('ICT2121', 'ICT', 'THEORY', 'WEDNESDAY', '10:00:00', '12:00:00', 'ICT-HARDWARE-LAB'),
+('ICT2122', 'ICT', 'THEORY', 'THURSDAY', '08:00:00', '10:00:00', 'LAB-12'),
+('ICT2122', 'ICT', 'PRACTICAL', 'THURSDAY', '10:00:00', '12:00:00', 'LAB-12'),
+('ICT2122', 'ICT', 'PRACTICAL', 'THURSDAY', '01:00:00', '04:00:00', 'LAB-12'),
+('TCS2112', 'ICT', 'THEORY', 'FRIDAY', '08:00:00', '10:00:00', 'ICT-HARDWARE-LAB'),
+('ICT2162', 'ICT', 'THEORY', 'FRIDAY', '10:00:00', '12:00:00', 'NEW-LAB'),
+('ENG2122', 'ICT', 'THEORY', 'FRIDAY', '01:00:00', '03:00:00', 'ICT-HARDWARE-LAB');

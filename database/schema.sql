@@ -250,18 +250,18 @@ INSERT INTO undergraduate (student_id, reg_no, department, batch, is_repeat) VAL
 ('tg1020', 'TG/2020/1020', 'ICT', '2019/2020', TRUE);  -- Repeat Student 2
 
 -- Sample Course
-INSERT INTO course (course_id, course_name, credit, has_theory, has_practical)
-VALUES ('ICT2132', 'Object Oriented Programming Practicum', 2, TRUE, TRUE);
-
 INSERT INTO course (course_id, course_name, credit, has_theory, has_practical) VALUES
-('ICT2113', 'ICT2113', 3, TRUE, TRUE),
-('ICT2142', 'ICT2142', 3, TRUE, TRUE),
-('ICT2152', 'ICT2152', 2, TRUE, FALSE),
-('TCS2112', 'TCS2112', 2, TRUE, FALSE),
-('ICT2121', 'ICT2121', 1, TRUE, FALSE),
-('ICT2122', 'ICT2122', 3, TRUE, TRUE),
-('ICT2162', 'ICT2162', 2, TRUE, FALSE),
-('ENG2122', 'ENG2122', 2, TRUE, FALSE);
+('ICT2132', 'Object Oriented Programming Practicum', 2, TRUE, TRUE),
+('ICT2113', 'Database Management Systems', 3, TRUE, TRUE),
+('ICT2142', 'Operating Systems', 2, TRUE, TRUE),
+('ICT2152', 'Data Structures and Algorithms', 2, TRUE, TRUE),
+('TCS2112', 'System Analysis and Design', 2, TRUE, FALSE),
+('ICT2121', 'Computer Networks', 1, TRUE, FALSE),
+('ICT2122', 'Software Engineering', 2, TRUE, TRUE),
+('ICT2162', 'Web Technologies', 2, TRUE, TRUE),
+('ENG2122', 'Professional English', 2, TRUE, FALSE)
+ON DUPLICATE KEY UPDATE course_name=VALUES(course_name);
+
 
 INSERT INTO timetable (course_id, department, session_type, day_of_week, start_time, end_time, venue_id) VALUES
 ('ICT2113','ICT','THEORY','MONDAY','09:00:00','11:00:00','LAB-12'),

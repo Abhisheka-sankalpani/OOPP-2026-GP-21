@@ -77,5 +77,4 @@ public abstract class User {
 
     // Abstract method to be implemented by child classes (Abstraction)
     public abstract String getRole();
-    
 }

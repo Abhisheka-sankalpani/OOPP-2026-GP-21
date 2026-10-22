@@ -43,4 +43,23 @@ public class UndergraduateDAO {
         }
         return null;
     }
+    // Update contact details
+    public boolean updateContactDetails(String studentId, String email, String contactNo, String profilePic) {
+        String sql = "UPDATE users SET email = ?, contact_no = ?, profile_pic = ? WHERE user_id = ?";
+
+        try (java.sql.Connection conn = db.DBConnection.getConnection();
+             java.sql.PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, email);
+            stmt.setString(2, contactNo);
+            stmt.setString(3, profilePic);
+            stmt.setString(4, studentId);
+
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (java.sql.SQLException e) {
+            System.out.println("Error updating student profile: " + e.getMessage());
+            return false;
+        }
+    }
 }

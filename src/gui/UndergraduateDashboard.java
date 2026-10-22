@@ -15,6 +15,9 @@ public class UndergraduateDashboard extends JFrame {
     private Undergraduate currentStudent;
     private UndergraduateDAO undergraduateDAO;
     private JTabbedPane tabbedPane;
+    private JTextField txtEmail;
+    private JTextField txtContact;
+    private JTextField txtProfilePic;
 
     public UndergraduateDashboard(String studentId) {
         this.studentId = studentId;
@@ -85,7 +88,7 @@ public class UndergraduateDashboard extends JFrame {
         lblTitle.setFont(new Font("Arial", Font.BOLD, 18));
         panel.add(lblTitle, BorderLayout.NORTH);
 
-        JPanel centerPanel = new JPanel(new GridLayout(6, 2, 10, 10));
+        JPanel centerPanel = new JPanel(new GridLayout(8, 2, 10, 10));
 
         if (currentStudent != null) {
             centerPanel.add(new JLabel("Student ID:"));
@@ -100,11 +103,58 @@ public class UndergraduateDashboard extends JFrame {
             centerPanel.add(new JLabel("Department:"));
             centerPanel.add(new JLabel(currentStudent.getDepartment()));
 
+            // Email
             centerPanel.add(new JLabel("Email:"));
-            centerPanel.add(new JLabel(currentStudent.getEmail()));
+            txtEmail = new JTextField(currentStudent.getEmail());
+            centerPanel.add(txtEmail);
 
+            // Contact Number
+            centerPanel.add(new JLabel("Contact Number:"));
+            txtContact = new JTextField(currentStudent.getContactNo());
+            centerPanel.add(txtContact);
+
+            // Profile Picture
             centerPanel.add(new JLabel("Profile Picture:"));
-            centerPanel.add(new JLabel(currentStudent.getProfilePic()));
+
+            JPanel picPanel = new JPanel(new BorderLayout(5, 0));
+            txtProfilePic = new JTextField(currentStudent.getProfilePic());
+            JButton btnBrowse = new JButton("Browse...");
+
+            btnBrowse.addActionListener(e -> {
+                JFileChooser fileChooser = new JFileChooser();
+                int result = fileChooser.showOpenDialog(panel);
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    txtProfilePic.setText(fileChooser.getSelectedFile().getAbsolutePath());
+                }
+            });
+
+            picPanel.add(txtProfilePic, BorderLayout.CENTER);
+            picPanel.add(btnBrowse, BorderLayout.EAST);
+
+            centerPanel.add(picPanel);
+
+            // Update button
+            centerPanel.add(new JLabel(""));
+            JButton btnUpdate = new JButton("Update");
+
+            btnUpdate.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    // 1. Get Data in Text Field
+                    String email = txtEmail.getText();
+                    String contactNo = txtContact.getText();
+                    String profilePicPath = txtProfilePic.getText();
+
+                    // 2. Update database
+                    boolean isSuccess = undergraduateDAO.updateContactDetails(studentId, email, contactNo, profilePicPath);
+
+                    if (isSuccess == true) {
+                        JOptionPane.showMessageDialog(panel, "Updated Successfully!");
+                    }
+                }
+            });
+
+            centerPanel.add(btnUpdate);
         } else {
             centerPanel.add(new JLabel("Student data not found in Database!"));
         }
@@ -113,6 +163,7 @@ public class UndergraduateDashboard extends JFrame {
         return panel;
     }
 
+    
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             new UndergraduateDashboard("tg1001").setVisible(true);

@@ -1,13 +1,18 @@
 package gui;
 
 import dao.UndergraduateDAO;
+import model.Attendance;
 import model.Undergraduate;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.List;
 
 public class UndergraduateDashboard extends JFrame {
 
@@ -18,11 +23,16 @@ public class UndergraduateDashboard extends JFrame {
     private JTextField txtEmail;
     private JTextField txtContact;
     private JTextField txtProfilePic;
+    private dao.AttendanceDAO attendanceDAO;
+    private javax.swing.table.DefaultTableModel modelAttendance;
+    private JLabel lblAttendanceSummary;
+    private JTable tableAttendance;
 
     public UndergraduateDashboard(String studentId) {
         this.studentId = studentId;
         this.undergraduateDAO = new UndergraduateDAO();
         this.currentStudent = undergraduateDAO.getStudentById(this.studentId);
+        this.attendanceDAO = new dao.AttendanceDAO();
 
         setTitle("Undergraduate Portal");
         setSize(900, 600);
@@ -45,7 +55,8 @@ public class UndergraduateDashboard extends JFrame {
 
         // Add Profile Tab
         tabbedPane.addTab("My Profile", createProfilePanel());
-
+        //Add Attendance Tab
+        tabbedPane.addTab("My Attendance", createAttendancePanel());
         rootPanel.add(tabbedPane, BorderLayout.CENTER);
         add(rootPanel);
     }
@@ -162,11 +173,92 @@ public class UndergraduateDashboard extends JFrame {
         panel.add(centerPanel, BorderLayout.CENTER);
         return panel;
     }
+    private JPanel createAttendancePanel() {
+        JPanel panel = new JPanel(new BorderLayout(15, 12));
+        panel.setBorder(BorderFactory.createEmptyBorder(18, 24, 18, 24));
 
-    
+        // Top bar
+        JPanel topPanel = new JPanel(new BorderLayout());
+
+        JPanel leftBox = new JPanel();
+        leftBox.setLayout(new BoxLayout(leftBox, BoxLayout.Y_AXIS));
+
+        JLabel lblTitle = new JLabel("My Attendance");
+        lblTitle.setFont(new Font("Arial", Font.BOLD, 18));
+        leftBox.add(lblTitle);
+
+        JLabel lblSubtitle = new JLabel("Minimum requirement: 80% per course module.");
+        leftBox.add(lblSubtitle);
+
+        topPanel.add(leftBox, BorderLayout.WEST);
+
+        // Refresh button
+        JButton btnRefreshAtt = new JButton("Refresh");
+        btnRefreshAtt.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                loadAttendanceData();
+            }
+        });
+        topPanel.add(btnRefreshAtt, BorderLayout.EAST);
+
+        panel.add(topPanel, BorderLayout.NORTH);
+
+        String[] colNames = {"Course ID", "Course Title", "Theory (Att/Tot)", "Practical (Att/Tot)", "Overall %", "Eligibility"};
+        modelAttendance = new DefaultTableModel(colNames, 0) {
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
+        };
+
+        tableAttendance = new JTable(modelAttendance);
+        tableAttendance.setRowHeight(25);
+
+        JScrollPane scrollPane = new JScrollPane(tableAttendance);
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        // Footer Summary
+        lblAttendanceSummary = new JLabel("Attendance summary: Calculating...");
+        lblAttendanceSummary.setFont(new Font("Arial", Font.BOLD, 12));
+        panel.add(lblAttendanceSummary, BorderLayout.SOUTH);
+
+        return panel;
+    }
+
+    private void loadAttendanceData() {
+        modelAttendance.setRowCount(0);
+        List<Attendance> list = attendanceDAO.getAttendanceByStudentId(studentId);
+
+        int eligibleCount = 0;
+        int total = 0;
+
+        for (Attendance a : list) {
+            // Only list relevant courses or enrolled courses
+            if (a.getOverallPercentage() > 0 || (a.getTheoryRatio().contains("/") && !a.getTheoryRatio().equals("0/0"))) {
+                total++;
+                boolean isEligible = a.getOverallPercentage() >= 80.0;
+                if (isEligible) eligibleCount++;
+
+                Object[] row = {
+                        a.getCourseId(),
+                        a.getCourseName(),
+                        a.getTheoryRatio(),
+                        a.getPracticalRatio(),
+                        String.format("%.1f%%", a.getOverallPercentage()),
+                        isEligible ? "Eligible" : "Not Eligible"
+                };
+                modelAttendance.addRow(row);
+            }
+        }
+
+        lblAttendanceSummary.setText("Eligible Course Modules: " + eligibleCount + " of " + total + " enrolled courses.");
+    }
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             new UndergraduateDashboard("tg1001").setVisible(true);
         });
     }
+
 }

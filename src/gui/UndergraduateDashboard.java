@@ -65,6 +65,8 @@ public class UndergraduateDashboard extends JFrame {
         add(rootPanel);
         // Add Medical Tab
         tabbedPane.addTab("My Medicals", createMedicalPanel());
+        //Add Course tab
+        tabbedPane.addTab("My Courses", new UndergraduateCourseForm(studentId));
     }
 
     private JPanel createHeaderBar() {
@@ -282,7 +284,7 @@ public class UndergraduateDashboard extends JFrame {
         topPanel.add(btnRefreshMed, BorderLayout.EAST);
 
         panel.add(topPanel, BorderLayout.NORTH);
-        
+
         String[] colNames = {"Course ID", "Session No", "Type", "Medical Date", "Status"};
         modelMedical = new DefaultTableModel(colNames, 0) {
             @Override

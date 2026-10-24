@@ -67,6 +67,8 @@ public class UndergraduateDashboard extends JFrame {
         tabbedPane.addTab("My Medicals", createMedicalPanel());
         //Add Course tab
         tabbedPane.addTab("My Courses", new UndergraduateCourseForm(studentId));
+        //Add Course Material Tab
+        tabbedPane.addTab("Course Materials", new UndergraduateCourseMaterialForm(studentId));
     }
 
     private JPanel createHeaderBar() {

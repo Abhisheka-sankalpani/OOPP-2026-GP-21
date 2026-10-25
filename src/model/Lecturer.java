@@ -3,9 +3,9 @@ package model;
 public class Lecturer extends User {
     private String department;
 
-    public Lecturer(String userId, String password, String firstName, String lastName,
-                    String email, String contactNo, String profilePic, String department) {
-        super(userId, password, firstName, lastName, email, contactNo, profilePic);
+    public Lecturer(String userId, String firstName, String lastName, String email,
+                    String contactNo, String profilePic, String department) {
+        super(userId, firstName, lastName, email, contactNo, profilePic);
         this.department = department;
     }
 
@@ -14,11 +14,12 @@ public class Lecturer extends User {
         return "LECTURER";
     }
 
-    @Override
     public void showDashboard() {
-        // Replace with the Swing/JavaFX Lecturer dashboard later
-        System.out.println("Lecturer Dashboard - " + getFullName() + " (" + department + ")");
+        // Replace with the Swing Lecturer dashboard later
+        System.out.println("Lecturer Dashboard - " + getFirstName() + " " + getLastName()
+                + " (" + department + ")");
     }
 
     public String getDepartment() { return department; }
+    public void setDepartment(String department) { this.department = department; }
 }

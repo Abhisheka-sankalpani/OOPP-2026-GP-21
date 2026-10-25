@@ -7,7 +7,7 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        Lecturer lec = new Lecturer("lec1", "lec123", "Kamal", "Silva",
+        Lecturer lec = new Lecturer("lec1", "Kamal", "Silva",
                 "kamal@fot.ruh.ac.lk", null, null, "ICT");
         lec.showDashboard();
 

@@ -27,4 +27,12 @@ public enum Grade {
 
     /** Grade D or above is a pass. */
     public boolean isPass() { return this != E; }
+
+    /** Converts "A+", "B-" ... (as stored in the database) back to a Grade. */
+    public static Grade fromLabel(String label) {
+        for (Grade g : values()) {
+            if (g.label.equals(label)) return g;
+        }
+        throw new IllegalArgumentException("Unknown grade: " + label);
+    }
 }

@@ -44,6 +44,13 @@ public class Result {
         gradePoint = grade.getGradePoint();
     }
 
+    /** Used by the DAO to restore an already calculated result from the database. */
+    public void loadStored(double totalScore, Grade grade, double gradePoint) {
+        this.totalScore = totalScore;
+        this.grade = grade;
+        this.gradePoint = gradePoint;
+    }
+
     public void setCaTotal(double caTotal) { this.caTotal = caTotal; }
     public void setFinalExamScore(double finalExamScore) { this.finalExamScore = finalExamScore; }
     public void setGpaModule(boolean gpaModule) { this.gpaModule = gpaModule; }

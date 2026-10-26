@@ -1,0 +1,405 @@
+package gui;
+
+import dao.AssessmentDAO;
+import dao.AssessmentDAOImpl;
+import dao.MarkDAO;
+import dao.MarkDAOImpl;
+import dao.ResultDAO;
+import dao.ResultDAOImpl;
+import exception.DatabaseException;
+import exception.InvalidMarkException;
+import model.Assessment;
+import model.Lecturer;
+import model.Mark;
+import model.Result;
+import util.EligibilityChecker;
+import util.GPACalculator;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class LecturerDashboard extends JFrame {
+
+    private final Lecturer lecturer;
+    private final AssessmentDAO assessmentDAO = new AssessmentDAOImpl();
+    private final MarkDAO markDAO = new MarkDAOImpl();
+    private final ResultDAO resultDAO = new ResultDAOImpl();
+
+    // Upload Marks tab
+    private JTextField txtMarkCourse;
+    private JComboBox<String> cmbAssessment;
+    private JTextField txtMarkStudent;
+    private JTextField txtScore;
+    private List<Assessment> loadedAssessments = new ArrayList<>();
+
+    // Final Results tab
+    private JTextField txtResCourse;
+    private JTextField txtResStudent;
+    private JTextField txtFinalScore;
+    private JTextField txtCaWeight;
+    private JCheckBox chkRepeat;
+    private JLabel lblResultSummary;
+
+    // Grades & GPA tab
+    private JTextField txtGradeStudent;
+    private DefaultTableModel gradeTableModel;
+    private JLabel lblGpa;
+
+    public LecturerDashboard(Lecturer lecturer) {
+        this.lecturer = lecturer;
+
+        setTitle("Lecturer Portal");
+        setSize(900, 600);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        initUI();
+    }
+
+    private void initUI() {
+        JPanel rootPanel = new JPanel(new BorderLayout());
+        rootPanel.add(createHeaderBar(), BorderLayout.NORTH);
+
+        JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane.setFont(new Font("Arial", Font.PLAIN, 14));
+        tabbedPane.addTab("My Profile", createProfilePanel());
+        tabbedPane.addTab("Upload Marks", createUploadMarksPanel());
+        tabbedPane.addTab("Final Results", createFinalResultPanel());
+        tabbedPane.addTab("Grades & GPA", createGradesPanel());
+
+        rootPanel.add(tabbedPane, BorderLayout.CENTER);
+        add(rootPanel);
+    }
+
+    // ---------------------------------------------------------------- header
+
+    private JPanel createHeaderBar() {
+        JPanel bar = new JPanel(new BorderLayout(10, 10));
+        bar.setBackground(new Color(11, 102, 77));
+        bar.setBorder(new EmptyBorder(10, 20, 10, 20));
+
+        JLabel lblWelcome = new JLabel("Welcome, " + lecturer.getFirstName() + " " + lecturer.getLastName());
+        lblWelcome.setFont(new Font("Arial", Font.BOLD, 16));
+        lblWelcome.setForeground(Color.WHITE);
+        bar.add(lblWelcome, BorderLayout.WEST);
+
+        JButton btnLogout = new JButton("Logout");
+        btnLogout.setBackground(Color.RED);
+        btnLogout.setForeground(Color.WHITE);
+        btnLogout.addActionListener(e -> {
+            int option = JOptionPane.showConfirmDialog(this,
+                    "Are you sure you want to log out?", "Confirm", JOptionPane.YES_NO_OPTION);
+            if (option == JOptionPane.YES_OPTION) {
+                dispose();
+            }
+        });
+        bar.add(btnLogout, BorderLayout.EAST);
+        return bar;
+    }
+
+    // ---------------------------------------------------------------- profile
+
+    private JPanel createProfilePanel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        JLabel lblTitle = new JLabel("My Profile Information");
+        lblTitle.setFont(new Font("Arial", Font.BOLD, 18));
+        panel.add(lblTitle, BorderLayout.NORTH);
+
+        JPanel center = new JPanel(new GridLayout(6, 2, 10, 10));
+        center.add(new JLabel("Lecturer ID:"));
+        center.add(new JLabel(nz(lecturer.getUserId())));
+        center.add(new JLabel("Full Name:"));
+        center.add(new JLabel(lecturer.getFirstName() + " " + lecturer.getLastName()));
+        center.add(new JLabel("Department:"));
+        center.add(new JLabel(nz(lecturer.getDepartment())));
+        center.add(new JLabel("Email:"));
+        center.add(new JLabel(nz(lecturer.getEmail())));
+        center.add(new JLabel("Contact No:"));
+        center.add(new JLabel(nz(lecturer.getContactNo())));
+        center.add(new JLabel("Profile Picture:"));
+        center.add(new JLabel(nz(lecturer.getProfilePic())));
+
+        panel.add(center, BorderLayout.CENTER);
+        return panel;
+    }
+
+    // ---------------------------------------------------------------- upload marks
+
+    private JPanel createUploadMarksPanel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        JLabel lblTitle = new JLabel("Upload Marks (out of 100)");
+        lblTitle.setFont(new Font("Arial", Font.BOLD, 18));
+        panel.add(lblTitle, BorderLayout.NORTH);
+
+        JPanel form = new JPanel(new GridLayout(6, 2, 10, 10));
+
+        txtMarkCourse = new JTextField();
+        JButton btnLoad = new JButton("Load Assessments");
+        cmbAssessment = new JComboBox<>();
+        txtMarkStudent = new JTextField();
+        txtScore = new JTextField();
+        JButton btnSave = new JButton("Save Mark");
+
+        form.add(new JLabel("Course ID (e.g. ICT2132):"));
+        form.add(txtMarkCourse);
+        form.add(new JLabel(""));
+        form.add(btnLoad);
+        form.add(new JLabel("Assessment:"));
+        form.add(cmbAssessment);
+        form.add(new JLabel("Student ID (e.g. tg1001):"));
+        form.add(txtMarkStudent);
+        form.add(new JLabel("Score (0 - 100):"));
+        form.add(txtScore);
+        form.add(new JLabel(""));
+        form.add(btnSave);
+
+        btnLoad.addActionListener(e -> loadAssessments());
+        btnSave.addActionListener(e -> saveMark());
+
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.add(form, BorderLayout.NORTH);
+        panel.add(wrapper, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private void loadAssessments() {
+        String courseId = txtMarkCourse.getText().trim();
+        if (courseId.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Enter a course ID first.");
+            return;
+        }
+        try {
+            loadedAssessments = assessmentDAO.getAssessmentsByCourse(courseId);
+            cmbAssessment.removeAllItems();
+            for (Assessment a : loadedAssessments) {
+                cmbAssessment.addItem(a.getName() + " (" + a.getWeightage() + "%)");
+            }
+            if (loadedAssessments.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No assessments found for " + courseId);
+            }
+        } catch (DatabaseException ex) {
+            showError(ex);
+        }
+    }
+
+    private void saveMark() {
+        int index = cmbAssessment.getSelectedIndex();
+        if (index < 0 || index >= loadedAssessments.size()) {
+            JOptionPane.showMessageDialog(this, "Load and select an assessment first.");
+            return;
+        }
+        String studentId = txtMarkStudent.getText().trim();
+        if (studentId.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Enter a student ID.");
+            return;
+        }
+        try {
+            double score = Double.parseDouble(txtScore.getText().trim());
+            Assessment assessment = loadedAssessments.get(index);
+            Mark mark = new Mark(0, assessment.getAssessmentId(), studentId, score); // validates 0-100
+            markDAO.addMark(mark);
+            JOptionPane.showMessageDialog(this, "Mark saved for " + studentId);
+            txtScore.setText("");
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Score must be a number.", "Invalid input",
+                    JOptionPane.WARNING_MESSAGE);
+        } catch (InvalidMarkException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Invalid mark", JOptionPane.WARNING_MESSAGE);
+        } catch (DatabaseException ex) {
+            showError(ex);
+        }
+    }
+
+    // ---------------------------------------------------------------- final results
+
+    private JPanel createFinalResultPanel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        JLabel lblTitle = new JLabel("Calculate Final Result and Grade");
+        lblTitle.setFont(new Font("Arial", Font.BOLD, 18));
+        panel.add(lblTitle, BorderLayout.NORTH);
+
+        JPanel form = new JPanel(new GridLayout(6, 2, 10, 10));
+        txtResCourse = new JTextField();
+        txtResStudent = new JTextField();
+        txtFinalScore = new JTextField();
+        txtCaWeight = new JTextField("40");
+        chkRepeat = new JCheckBox("Repeat attempt (highest grade is C)");
+        JButton btnCalc = new JButton("Calculate and Save");
+
+        form.add(new JLabel("Course ID:"));
+        form.add(txtResCourse);
+        form.add(new JLabel("Student ID:"));
+        form.add(txtResStudent);
+        form.add(new JLabel("Final exam score (0 - 100):"));
+        form.add(txtFinalScore);
+        form.add(new JLabel("CA weight in final total (%):"));
+        form.add(txtCaWeight);
+        form.add(new JLabel(""));
+        form.add(chkRepeat);
+        form.add(new JLabel(""));
+        form.add(btnCalc);
+
+        btnCalc.addActionListener(e -> calculateAndSaveResult());
+
+        lblResultSummary = new JLabel(" ");
+        lblResultSummary.setFont(new Font("Arial", Font.BOLD, 14));
+
+        JPanel wrapper = new JPanel(new BorderLayout(10, 10));
+        wrapper.add(form, BorderLayout.NORTH);
+        wrapper.add(lblResultSummary, BorderLayout.CENTER);
+        panel.add(wrapper, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private void calculateAndSaveResult() {
+        String courseId = txtResCourse.getText().trim();
+        String studentId = txtResStudent.getText().trim();
+        if (courseId.isEmpty() || studentId.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Enter the course ID and the student ID.");
+            return;
+        }
+        try {
+            double finalScore = Double.parseDouble(txtFinalScore.getText().trim());
+            double caWeight = Double.parseDouble(txtCaWeight.getText().trim());
+            if (caWeight < 0 || caWeight > 100) {
+                JOptionPane.showMessageDialog(this, "CA weight must be between 0 and 100.");
+                return;
+            }
+
+            List<Assessment> assessments = assessmentDAO.getAssessmentsByCourse(courseId);
+            List<Mark> marks = markDAO.getMarksByStudent(studentId);
+
+            // credits are read from the course table when results are loaded, so 0 is fine for saving
+            Result result = new Result(studentId, courseId, 0, chkRepeat.isSelected());
+            result.calculateCaTotal(assessments, marks);
+
+            if (!EligibilityChecker.isCaEligible(result.getCaTotal())) {
+                lblResultSummary.setText("CA total = " + format(result.getCaTotal())
+                        + " (below 40). Not eligible for the final exam. Nothing saved.");
+                return;
+            }
+
+            result.setFinalExamScore(finalScore);
+            result.calculateTotal(caWeight);   // also works out grade and grade point
+            resultDAO.saveResult(result);
+
+            lblResultSummary.setText("CA = " + format(result.getCaTotal())
+                    + "   Total = " + format(result.getTotalScore())
+                    + "   Grade = " + result.getGrade().getLabel()
+                    + "   GPV = " + result.getGradePoint() + "   (saved)");
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Final score and CA weight must be numbers.",
+                    "Invalid input", JOptionPane.WARNING_MESSAGE);
+        } catch (InvalidMarkException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Invalid mark", JOptionPane.WARNING_MESSAGE);
+        } catch (DatabaseException ex) {
+            showError(ex);
+        }
+    }
+
+    // ---------------------------------------------------------------- grades and GPA
+
+    private JPanel createGradesPanel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        JLabel lblTitle = new JLabel("Student Grades and GPA");
+        lblTitle.setFont(new Font("Arial", Font.BOLD, 18));
+
+        JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        txtGradeStudent = new JTextField(12);
+        JButton btnView = new JButton("View Grades");
+        top.add(new JLabel("Student ID:"));
+        top.add(txtGradeStudent);
+        top.add(btnView);
+
+        JPanel north = new JPanel(new BorderLayout());
+        north.add(lblTitle, BorderLayout.NORTH);
+        north.add(top, BorderLayout.CENTER);
+        panel.add(north, BorderLayout.NORTH);
+
+        String[] columns = {"Course", "Credits", "CA", "Final Exam", "Total", "Grade", "GPV"};
+        gradeTableModel = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        JTable table = new JTable(gradeTableModel);
+        panel.add(new JScrollPane(table), BorderLayout.CENTER);
+
+        lblGpa = new JLabel(" ");
+        lblGpa.setFont(new Font("Arial", Font.BOLD, 14));
+        panel.add(lblGpa, BorderLayout.SOUTH);
+
+        btnView.addActionListener(e -> viewGrades());
+        return panel;
+    }
+
+    private void viewGrades() {
+        String studentId = txtGradeStudent.getText().trim();
+        if (studentId.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Enter a student ID.");
+            return;
+        }
+        try {
+            List<Result> results = resultDAO.getResultsByStudent(studentId);
+            gradeTableModel.setRowCount(0);
+            for (Result r : results) {
+                gradeTableModel.addRow(new Object[]{
+                        r.getCourseId(),
+                        r.getCredits(),
+                        format(r.getCaTotal()),
+                        format(r.getFinalExamScore()),
+                        format(r.getTotalScore()),
+                        r.getGrade() == null ? "-" : r.getGrade().getLabel(),
+                        r.getGradePoint()
+                });
+            }
+            if (results.isEmpty()) {
+                lblGpa.setText("No results found for " + studentId);
+            } else {
+                lblGpa.setText("GPA (all results shown) = " + format(GPACalculator.calculateCGPA(results)));
+            }
+        } catch (DatabaseException ex) {
+            showError(ex);
+        }
+    }
+
+    // ---------------------------------------------------------------- helpers
+
+    private String nz(String value) {
+        return value == null ? "-" : value;
+    }
+
+    private String format(double value) {
+        return String.format("%.2f", value);
+    }
+
+    private void showError(Exception ex) {
+        String message = ex.getMessage();
+        if (ex.getCause() != null) {
+            message += "\n" + ex.getCause().getMessage();
+        }
+        JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            // Temporary test lecturer - replace with the logged-in lecturer once the login screen is ready
+            Lecturer lec = new Lecturer("lec1", "Kamal", "Silva",
+                    "kamal@fot.ruh.ac.lk", null, null, "ICT");
+            new LecturerDashboard(lec).setVisible(true);
+        });
+    }
+}

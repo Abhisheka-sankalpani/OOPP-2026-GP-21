@@ -71,6 +71,8 @@ public class UndergraduateDashboard extends JFrame {
         tabbedPane.addTab("Course Materials", new UndergraduateCourseMaterialForm(studentId));
         //Add Exam Eligibility
         tabbedPane.addTab("Exam Eligibility", new UndergraduateEligibilityForm(studentId));
+        //Add Timetable Tab
+        tabbedPane.addTab("Timetable", new UndergraduateTimetableForm("ICT"));
     }
 
     private JPanel createHeaderBar() {

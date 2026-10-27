@@ -33,7 +33,7 @@ public class UndergraduateTimetableForm extends JPanel {
         for (Timetable t : list) {
             tableModel.addRow(new Object[]{
                     t.getDayOfWeek(),
-                    t.getTimeSlot(), 
+                    t.getTimeSlot(),
                     t.getCourseId() + " - " + t.getCourseName(),
                     t.getSessionType(),
                     t.getVenueId()

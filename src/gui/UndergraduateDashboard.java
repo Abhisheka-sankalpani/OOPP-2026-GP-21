@@ -73,6 +73,8 @@ public class UndergraduateDashboard extends JFrame {
         tabbedPane.addTab("Exam Eligibility", new UndergraduateEligibilityForm(studentId));
         //Add Timetable Tab
         tabbedPane.addTab("Timetable", new UndergraduateTimetableForm("ICT"));
+        //Add Notice Tab
+        tabbedPane.addTab("Notices", new UndergraduateNoticeForm());
     }
 
     private JPanel createHeaderBar() {

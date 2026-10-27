@@ -1,5 +1,6 @@
 package database;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.sql.Connection;
@@ -11,7 +12,12 @@ public class DBConnection {
       public static Connection getConnection() throws SQLException{
           Properties props = new Properties();
 
-          try (FileInputStream file = new FileInputStream("C:\\Users\\wwwsa\\OneDrive\\Desktop\\sem 3\\oop project\\OOPP-2026-GP-21\\src\\resources\\db.properties")) {
+          //File file = new File("src/main/resources/db.properties");
+
+          //System.out.println("File Path: " + file.getAbsolutePath());
+         // System.out.println("File Exists: " + file.exists());
+
+          try (FileInputStream file = new FileInputStream("src/resources/db.properties")) {
               props.load(file);
           }
           catch(IOException e){
@@ -19,7 +25,7 @@ public class DBConnection {
 
           }
           String url = props.getProperty("db.url");
-          String user = props.getProperty("db.username");
+          String user = props.getProperty("db.user");
           String password = props.getProperty("db.password","");
 
           return DriverManager.getConnection(url,user,password);

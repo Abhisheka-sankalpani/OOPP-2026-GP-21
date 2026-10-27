@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="cabfa251-f4e3-4e63-acf9-9289a1de6069" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/src/resources/db.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/resources/db.properties" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="NextEditCompletionFeaturesState">
+    <decayedCancelled>
+      <entry key="MS100" value="1.0" />
+      <entry key="MS500" value="1.0" />
+      <entry key="S2" value="1.0" />
+      <entry key="S5" value="1.0" />
+      <entry key="S10" value="1.0" />
+      <entry key="S30" value="1.0000000000388602" />
+      <entry key="S60" value="1.000014676108043" />
+      <entry key="M2" value="1.0105413417469116" />
+      <entry key="M5" value="1.705191070281004" />
+      <entry key="M10" value="4.9334419374137735" />
+      <entry key="M15" value="8.799577625504698" />
+      <entry key="M30" value="17.61866829022266" />
+      <entry key="H1" value="25.919818997958384" />
+      <entry key="H2" value="31.710560049317884" />
+      <entry key="H4" value="35.14455351916475" />
+      <entry key="D1" value="38.325925654830144" />
+      <entry key="W1" value="38.9029012935874" />
+    </decayedCancelled>
+    <decayedSelected>
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="0.0" />
+      <entry key="S2" value="5.311030616611253E-167" />
+      <entry key="S5" value="3.0908044013563656E-67" />
+      <entry key="S10" value="5.559537742171539E-34" />
+      <entry key="S30" value="8.543735201296184E-12" />
+      <entry key="S60" value="4.010873835913425E-6" />
+      <entry key="M2" value="0.004007127700506591" />
+      <entry key="M5" value="0.3192954068326478" />
+      <entry key="M10" value="1.587997211508876" />
+      <entry key="M15" value="2.871693965157173" />
+      <entry key="M30" value="5.45196392259873" />
+      <entry key="H1" value="7.6806740874444905" />
+      <entry key="H2" value="9.172291374552671" />
+      <entry key="H4" value="10.03929754067937" />
+      <entry key="D1" value="10.832916869002005" />
+      <entry key="W1" value="10.975954032157139" />
+    </decayedSelected>
+    <decayedShown>
+      <entry key="MS100" value="3.689682468276953E-7" />
+      <entry key="MS500" value="0.05168896052770411" />
+      <entry key="S2" value="0.47681449532305886" />
+      <entry key="S5" value="0.7436006827467124" />
+      <entry key="S10" value="0.8623228413690041" />
+      <entry key="S30" value="0.9518239534728349" />
+      <entry key="S60" value="0.9756329561746724" />
+      <entry key="M2" value="1.0021064760322262" />
+      <entry key="M5" value="2.0138004849839404" />
+      <entry key="M10" value="6.500652913591349" />
+      <entry key="M15" value="11.644190450296696" />
+      <entry key="M30" value="23.041486655014303" />
+      <entry key="H1" value="33.578444525592346" />
+      <entry key="H2" value="40.869201071246565" />
+      <entry key="H4" value="45.17624481769446" />
+      <entry key="D1" value="49.15745400422528" />
+      <entry key="W1" value="49.87865383296127" />
+    </decayedShown>
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 3
+}</component>
+  <component name="ProjectId" id="3L8hwtV8jdVHwKvT5l8nrgvdq1J" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.TestDBConnection.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "TG-2024-2125",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/wwwsa/OneDrive/Desktop/sem 3/oop project/OOPP-2026-GP-21",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.jshint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.jshint": "",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-30f59d01ecdd-a203e0a19954-intellij.indexing.shared.core-IU-262.10315.125" />
+        <option value="bundled-js-predefined-d6986cc7102b-4abd2a77f808-JavaScript-IU-262.10315.125" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="cabfa251-f4e3-4e63-acf9-9289a1de6069" name="Changes" comment="" />
+      <created>1792841844591</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1792841844591</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>

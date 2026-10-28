@@ -12,6 +12,7 @@ import model.Assessment;
 import model.Lecturer;
 import model.Mark;
 import model.Result;
+import util.CACalculator;
 import util.EligibilityChecker;
 import util.GPACalculator;
 
@@ -38,6 +39,7 @@ public class LecturerDashboard extends JFrame {
     private JComboBox<String> cmbType;
     private JTextField txtAssessNo;
     private JTextField txtWeight;
+    private JTextField txtSetupCaWeight;
     private JLabel lblWeightTotal;
 
     // Final Results tab
@@ -57,7 +59,7 @@ public class LecturerDashboard extends JFrame {
         this.lecturer = lecturer;
 
         setTitle("Lecturer Portal");
-        setSize(900, 680);
+        setSize(900, 720);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -141,13 +143,19 @@ public class LecturerDashboard extends JFrame {
 
         JLabel lblTitle = new JLabel("Assessments and Marks (out of 100)");
         lblTitle.setFont(new Font("Arial", Font.BOLD, 18));
-        panel.add(lblTitle, BorderLayout.NORTH);
+        JLabel lblHint = new JLabel("Weightage = % of the whole course. Quizzes share one weightage "
+                + "(e.g. 10) and the best " + CACalculator.BEST_QUIZZES_COUNTED + " quiz marks are counted.");
+        JPanel north = new JPanel(new GridLayout(2, 1, 5, 5));
+        north.add(lblTitle);
+        north.add(lblHint);
+        panel.add(north, BorderLayout.NORTH);
 
         // Part 1: create / load the assessments (Quiz, Mid Exam ...) of a course
-        JPanel setup = new JPanel(new GridLayout(5, 2, 10, 10));
+        JPanel setup = new JPanel(new GridLayout(6, 2, 10, 10));
         setup.setBorder(BorderFactory.createTitledBorder("1. Assessments of the course"));
 
         txtMarkCourse = new JTextField();
+        txtSetupCaWeight = new JTextField("30");
         cmbType = new JComboBox<>(new String[]{"Quiz", "Mid Exam", "Assignment", "Practical", "Presentation"});
         txtAssessNo = new JTextField();
         txtWeight = new JTextField();
@@ -156,11 +164,13 @@ public class LecturerDashboard extends JFrame {
 
         setup.add(new JLabel("Course ID (e.g. ICT2132):"));
         setup.add(txtMarkCourse);
+        setup.add(new JLabel("CA weight of the course (%):"));
+        setup.add(txtSetupCaWeight);
         setup.add(new JLabel("Assessment type:"));
         setup.add(cmbType);
         setup.add(new JLabel("Number (optional, e.g. 1):"));
         setup.add(txtAssessNo);
-        setup.add(new JLabel("Weightage (% of CA):"));
+        setup.add(new JLabel("Weightage (% of the course):"));
         setup.add(txtWeight);
         setup.add(btnLoad);
         setup.add(btnAdd);
@@ -177,7 +187,7 @@ public class LecturerDashboard extends JFrame {
 
         marks.add(new JLabel("Assessment:"));
         marks.add(cmbAssessment);
-        marks.add(new JLabel("Total CA weightage so far:"));
+        marks.add(new JLabel("CA weightage added so far:"));
         marks.add(lblWeightTotal);
         marks.add(new JLabel("Student ID (e.g. tg1001):"));
         marks.add(txtMarkStudent);
@@ -195,6 +205,15 @@ public class LecturerDashboard extends JFrame {
         wrapper.add(marks);
         panel.add(wrapper, BorderLayout.CENTER);
         return panel;
+    }
+
+    private double getSetupCaWeight() {
+        try {
+            double w = Double.parseDouble(txtSetupCaWeight.getText().trim());
+            return (w > 0 && w <= 100) ? w : 30;
+        } catch (NumberFormatException e) {
+            return 30;
+        }
     }
 
     private void loadAssessments() {
@@ -218,12 +237,11 @@ public class LecturerDashboard extends JFrame {
     private void refreshAssessments(String courseId) throws DatabaseException {
         loadedAssessments = assessmentDAO.getAssessmentsByCourse(courseId);
         cmbAssessment.removeAllItems();
-        double total = 0;
         for (Assessment a : loadedAssessments) {
             cmbAssessment.addItem(a.getName() + " (" + a.getWeightage() + "%)");
-            total += a.getWeightage();
         }
-        lblWeightTotal.setText(format(total) + " / 100");
+        lblWeightTotal.setText(format(CACalculator.countedWeight(loadedAssessments))
+                + " / " + format(getSetupCaWeight()));
     }
 
     private void addAssessment() {
@@ -234,8 +252,10 @@ public class LecturerDashboard extends JFrame {
         }
         try {
             double weight = Double.parseDouble(txtWeight.getText().trim());
-            if (weight <= 0 || weight > 100) {
-                JOptionPane.showMessageDialog(this, "Weightage must be between 0 and 100.");
+            double caWeight = getSetupCaWeight();
+            if (weight <= 0 || weight > caWeight) {
+                JOptionPane.showMessageDialog(this, "Weightage must be more than 0 and not more than the CA weight ("
+                        + format(caWeight) + ").");
                 return;
             }
 
@@ -244,23 +264,32 @@ public class LecturerDashboard extends JFrame {
             if (!number.isEmpty()) {
                 name = name + " " + number;
             }
+            Assessment candidate = new Assessment(0, courseId, name, weight);
 
             refreshAssessments(courseId);   // make sure we check against the latest data
-            double total = 0;
             for (Assessment a : loadedAssessments) {
                 if (a.getName().equalsIgnoreCase(name)) {
                     JOptionPane.showMessageDialog(this, name + " already exists for " + courseId);
                     return;
                 }
-                total += a.getWeightage();
+                if (CACalculator.isQuiz(candidate) && CACalculator.isQuiz(a)
+                        && Math.abs(a.getWeightage() - weight) > 0.001) {
+                    JOptionPane.showMessageDialog(this, "All quizzes share one weightage ("
+                            + a.getWeightage() + "). Use the same value.");
+                    return;
+                }
             }
-            if (total + weight > 100) {
-                JOptionPane.showMessageDialog(this, "The total weightage would become "
-                        + format(total + weight) + ", which is more than 100.");
+
+            List<Assessment> after = new ArrayList<>(loadedAssessments);
+            after.add(candidate);
+            double newTotal = CACalculator.countedWeight(after);
+            if (newTotal > caWeight + 0.001) {
+                JOptionPane.showMessageDialog(this, "The CA weightage would become " + format(newTotal)
+                        + ", which is more than the CA weight (" + format(caWeight) + ").");
                 return;
             }
 
-            assessmentDAO.addAssessment(new Assessment(0, courseId, name, weight));
+            assessmentDAO.addAssessment(candidate);
             refreshAssessments(courseId);
             txtAssessNo.setText("");
             txtWeight.setText("");
@@ -315,7 +344,7 @@ public class LecturerDashboard extends JFrame {
         txtResCourse = new JTextField();
         txtResStudent = new JTextField();
         txtFinalScore = new JTextField();
-        txtCaWeight = new JTextField("40");
+        txtCaWeight = new JTextField("30");
         chkRepeat = new JCheckBox("Repeat attempt (highest grade is C)");
         JButton btnCalc = new JButton("Calculate and Save");
 
@@ -325,7 +354,7 @@ public class LecturerDashboard extends JFrame {
         form.add(txtResStudent);
         form.add(new JLabel("Final exam score (0 - 100):"));
         form.add(txtFinalScore);
-        form.add(new JLabel("CA weight in final total (%):"));
+        form.add(new JLabel("CA weight of the course (%):"));
         form.add(txtCaWeight);
         form.add(new JLabel(""));
         form.add(chkRepeat);
@@ -354,21 +383,28 @@ public class LecturerDashboard extends JFrame {
         try {
             double finalScore = Double.parseDouble(txtFinalScore.getText().trim());
             double caWeight = Double.parseDouble(txtCaWeight.getText().trim());
-            if (caWeight < 0 || caWeight > 100) {
-                JOptionPane.showMessageDialog(this, "CA weight must be between 0 and 100.");
+            if (caWeight <= 0 || caWeight > 100) {
+                JOptionPane.showMessageDialog(this, "CA weight must be more than 0 and not more than 100.");
                 return;
             }
 
             List<Assessment> assessments = assessmentDAO.getAssessmentsByCourse(courseId);
             List<Mark> marks = markDAO.getMarksByStudent(studentId);
 
+            double counted = CACalculator.countedWeight(assessments);
+            if (Math.abs(counted - caWeight) > 0.001) {
+                lblResultSummary.setText("Assessments of " + courseId + " add up to " + format(counted)
+                        + " but the CA weight is " + format(caWeight) + ". Fix the assessments first. Nothing saved.");
+                return;
+            }
+
             // credits are read from the course table when results are loaded, so 0 is fine for saving
             Result result = new Result(studentId, courseId, 0, chkRepeat.isSelected());
-            result.calculateCaTotal(assessments, marks);
+            result.calculateCaTotal(assessments, marks, caWeight);   // best 2 quizzes are counted
 
             if (!EligibilityChecker.isCaEligible(result.getCaTotal())) {
-                lblResultSummary.setText("CA total = " + format(result.getCaTotal())
-                        + " (below 40). Not eligible for the final exam. Nothing saved.");
+                lblResultSummary.setText("CA = " + format(result.getCaTotal())
+                        + " / 100 (below 40). Not eligible for the final exam. Nothing saved.");
                 return;
             }
 
@@ -376,7 +412,8 @@ public class LecturerDashboard extends JFrame {
             result.calculateTotal(caWeight);   // also works out grade and grade point
             resultDAO.saveResult(result);
 
-            lblResultSummary.setText("CA = " + format(result.getCaTotal())
+            lblResultSummary.setText("CA = " + format(result.getCaTotal()) + " / 100 ("
+                    + format(result.getCaTotal() * caWeight / 100.0) + " / " + format(caWeight) + ")"
                     + "   Total = " + format(result.getTotalScore())
                     + "   Grade = " + result.getGrade().getLabel()
                     + "   GPV = " + result.getGradePoint() + "   (saved)");

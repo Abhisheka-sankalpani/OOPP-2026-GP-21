@@ -2,6 +2,8 @@ package gui;
 
 import dao.AssessmentDAO;
 import dao.AssessmentDAOImpl;
+import dao.CourseMaterialDAO;
+import dao.CourseMaterialDAOImpl;
 import dao.MarkDAO;
 import dao.MarkDAOImpl;
 import dao.ResultDAO;
@@ -9,17 +11,21 @@ import dao.ResultDAOImpl;
 import exception.DatabaseException;
 import exception.InvalidMarkException;
 import model.Assessment;
+import model.LectureMaterial;
 import model.Lecturer;
 import model.Mark;
 import model.Result;
 import util.CACalculator;
 import util.EligibilityChecker;
+import util.FileStorage;
 import util.GPACalculator;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,6 +56,16 @@ public class LecturerDashboard extends JFrame {
     private JCheckBox chkRepeat;
     private JLabel lblResultSummary;
 
+    // Course Materials tab
+    private final CourseMaterialDAO materialDAO = new CourseMaterialDAOImpl();
+    private JTextField txtMatCourse;
+    private JTextField txtMatTitle;
+    private JTextField txtMatFile;
+    private File selectedFile;
+    private JTable materialTable;
+    private DefaultTableModel materialTableModel;
+    private List<LectureMaterial> loadedMaterials = new ArrayList<>();
+
     // Grades & GPA tab
     private JTextField txtGradeStudent;
     private DefaultTableModel gradeTableModel;
@@ -76,6 +92,7 @@ public class LecturerDashboard extends JFrame {
         tabbedPane.addTab("Upload Marks", createUploadMarksPanel());
         tabbedPane.addTab("Final Results", createFinalResultPanel());
         tabbedPane.addTab("Grades & GPA", createGradesPanel());
+        tabbedPane.addTab("Course Materials", createMaterialsPanel());
 
         rootPanel.add(tabbedPane, BorderLayout.CENTER);
         add(rootPanel);
@@ -493,6 +510,250 @@ public class LecturerDashboard extends JFrame {
             }
         } catch (DatabaseException ex) {
             showError(ex);
+        }
+    }
+
+    // ---------------------------------------------------------------- course materials
+
+    private JPanel createMaterialsPanel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        JLabel lblTitle = new JLabel("Course Materials (lecture notes)");
+        lblTitle.setFont(new Font("Arial", Font.BOLD, 18));
+        panel.add(lblTitle, BorderLayout.NORTH);
+
+        txtMatCourse = new JTextField();
+        txtMatTitle = new JTextField();
+        txtMatFile = new JTextField();
+        txtMatFile.setEditable(false);
+        JButton btnBrowse = new JButton("Browse...");
+
+        JPanel filePanel = new JPanel(new BorderLayout(5, 0));
+        filePanel.add(txtMatFile, BorderLayout.CENTER);
+        filePanel.add(btnBrowse, BorderLayout.EAST);
+
+        JPanel form = new JPanel(new GridLayout(3, 2, 10, 10));
+        form.add(new JLabel("Course ID (e.g. ICT2132):"));
+        form.add(txtMatCourse);
+        form.add(new JLabel("Title:"));
+        form.add(txtMatTitle);
+        form.add(new JLabel("File:"));
+        form.add(filePanel);
+
+        String[] columns = {"ID", "Title", "File", "Uploaded"};
+        materialTableModel = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        materialTable = new JTable(materialTableModel);
+        materialTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        JButton btnLoad = new JButton("Load Materials");
+        JButton btnUpload = new JButton("Upload New");
+        JButton btnUpdate = new JButton("Update Selected");
+        JButton btnDelete = new JButton("Delete Selected");
+        JButton btnOpen = new JButton("Open File");
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        buttons.add(btnLoad);
+        buttons.add(btnUpload);
+        buttons.add(btnUpdate);
+        buttons.add(btnDelete);
+        buttons.add(btnOpen);
+
+        JPanel center = new JPanel(new BorderLayout(10, 10));
+        center.add(form, BorderLayout.NORTH);
+        center.add(new JScrollPane(materialTable), BorderLayout.CENTER);
+        center.add(buttons, BorderLayout.SOUTH);
+        panel.add(center, BorderLayout.CENTER);
+
+        btnBrowse.addActionListener(e -> browseFile());
+        btnLoad.addActionListener(e -> loadMaterials());
+        btnUpload.addActionListener(e -> uploadMaterial());
+        btnUpdate.addActionListener(e -> updateMaterial());
+        btnDelete.addActionListener(e -> deleteMaterial());
+        btnOpen.addActionListener(e -> openMaterial());
+        materialTable.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                onMaterialSelected();
+            }
+        });
+        return panel;
+    }
+
+    private void browseFile() {
+        JFileChooser chooser = new JFileChooser();
+        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            selectedFile = chooser.getSelectedFile();
+            txtMatFile.setText(selectedFile.getAbsolutePath());
+            if (txtMatTitle.getText().trim().isEmpty()) {
+                txtMatTitle.setText(selectedFile.getName());
+            }
+        }
+    }
+
+    private void loadMaterials() {
+        String courseId = txtMatCourse.getText().trim();
+        if (courseId.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Enter a course ID first.");
+            return;
+        }
+        try {
+            refreshMaterials(courseId);
+            if (loadedMaterials.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No materials yet for " + courseId);
+            }
+        } catch (DatabaseException ex) {
+            showError(ex);
+        }
+    }
+
+    private void refreshMaterials(String courseId) throws DatabaseException {
+        loadedMaterials = materialDAO.getMaterialsByCourse(courseId);
+        materialTableModel.setRowCount(0);
+        for (LectureMaterial m : loadedMaterials) {
+            materialTableModel.addRow(new Object[]{
+                    m.getMaterialId(),
+                    m.getTitle(),
+                    FileStorage.displayName(m.getFilePath()),
+                    m.getUploadedDate()
+            });
+        }
+    }
+
+    private void onMaterialSelected() {
+        int row = materialTable.getSelectedRow();
+        if (row >= 0 && row < loadedMaterials.size()) {
+            txtMatTitle.setText(loadedMaterials.get(row).getTitle());
+            selectedFile = null;
+            txtMatFile.setText("");
+        }
+    }
+
+    private void clearMaterialForm() {
+        txtMatTitle.setText("");
+        txtMatFile.setText("");
+        selectedFile = null;
+    }
+
+    private void uploadMaterial() {
+        String courseId = txtMatCourse.getText().trim();
+        String title = txtMatTitle.getText().trim();
+        if (courseId.isEmpty() || title.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Enter the course ID and a title.");
+            return;
+        }
+        if (selectedFile == null || !selectedFile.isFile()) {
+            JOptionPane.showMessageDialog(this, "Choose a file with the Browse button first.");
+            return;
+        }
+        try {
+            String savedPath = FileStorage.saveCopy(selectedFile, courseId);
+            try {
+                materialDAO.addMaterial(new LectureMaterial(0, courseId, title, savedPath, null));
+            } catch (DatabaseException ex) {
+                FileStorage.delete(savedPath);   // do not keep a file that is not in the database
+                throw ex;
+            }
+            refreshMaterials(courseId);
+            clearMaterialForm();
+            JOptionPane.showMessageDialog(this, "Material uploaded for " + courseId);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "Could not copy the file: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (DatabaseException ex) {
+            showError(ex);
+        }
+    }
+
+    private void updateMaterial() {
+        int row = materialTable.getSelectedRow();
+        if (row < 0 || row >= loadedMaterials.size()) {
+            JOptionPane.showMessageDialog(this, "Select a material from the table first.");
+            return;
+        }
+        String title = txtMatTitle.getText().trim();
+        if (title.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "The title cannot be empty.");
+            return;
+        }
+        LectureMaterial old = loadedMaterials.get(row);
+        String newPath = old.getFilePath();
+        try {
+            boolean replaceFile = selectedFile != null;
+            if (replaceFile) {
+                if (!selectedFile.isFile()) {
+                    JOptionPane.showMessageDialog(this, "The chosen file does not exist.");
+                    return;
+                }
+                newPath = FileStorage.saveCopy(selectedFile, old.getCourseId());
+            }
+            try {
+                materialDAO.updateMaterial(old.getMaterialId(), title, newPath);
+            } catch (DatabaseException ex) {
+                if (replaceFile) {
+                    FileStorage.delete(newPath);
+                }
+                throw ex;
+            }
+            if (replaceFile) {
+                FileStorage.delete(old.getFilePath());   // remove the replaced file
+            }
+            refreshMaterials(old.getCourseId());
+            clearMaterialForm();
+            JOptionPane.showMessageDialog(this, "Material updated.");
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "Could not copy the file: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (DatabaseException ex) {
+            showError(ex);
+        }
+    }
+
+    private void deleteMaterial() {
+        int row = materialTable.getSelectedRow();
+        if (row < 0 || row >= loadedMaterials.size()) {
+            JOptionPane.showMessageDialog(this, "Select a material from the table first.");
+            return;
+        }
+        LectureMaterial material = loadedMaterials.get(row);
+        int option = JOptionPane.showConfirmDialog(this,
+                "Delete \"" + material.getTitle() + "\"?", "Confirm", JOptionPane.YES_NO_OPTION);
+        if (option != JOptionPane.YES_OPTION) {
+            return;
+        }
+        try {
+            materialDAO.deleteMaterial(material.getMaterialId());
+            FileStorage.delete(material.getFilePath());
+            refreshMaterials(material.getCourseId());
+            clearMaterialForm();
+        } catch (DatabaseException ex) {
+            showError(ex);
+        }
+    }
+
+    private void openMaterial() {
+        int row = materialTable.getSelectedRow();
+        if (row < 0 || row >= loadedMaterials.size()) {
+            JOptionPane.showMessageDialog(this, "Select a material from the table first.");
+            return;
+        }
+        File file = FileStorage.getFile(loadedMaterials.get(row).getFilePath());
+        if (!file.exists()) {
+            JOptionPane.showMessageDialog(this, "File not found: " + file.getPath());
+            return;
+        }
+        if (!Desktop.isDesktopSupported()) {
+            JOptionPane.showMessageDialog(this, "Opening files is not supported on this computer.");
+            return;
+        }
+        try {
+            Desktop.getDesktop().open(file);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "Could not open the file: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 

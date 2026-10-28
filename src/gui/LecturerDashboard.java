@@ -35,6 +35,10 @@ public class LecturerDashboard extends JFrame {
     private JTextField txtMarkStudent;
     private JTextField txtScore;
     private List<Assessment> loadedAssessments = new ArrayList<>();
+    private JComboBox<String> cmbType;
+    private JTextField txtAssessNo;
+    private JTextField txtWeight;
+    private JLabel lblWeightTotal;
 
     // Final Results tab
     private JTextField txtResCourse;
@@ -53,7 +57,7 @@ public class LecturerDashboard extends JFrame {
         this.lecturer = lecturer;
 
         setTitle("Lecturer Portal");
-        setSize(900, 600);
+        setSize(900, 680);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -135,37 +139,60 @@ public class LecturerDashboard extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        JLabel lblTitle = new JLabel("Upload Marks (out of 100)");
+        JLabel lblTitle = new JLabel("Assessments and Marks (out of 100)");
         lblTitle.setFont(new Font("Arial", Font.BOLD, 18));
         panel.add(lblTitle, BorderLayout.NORTH);
 
-        JPanel form = new JPanel(new GridLayout(6, 2, 10, 10));
+        // Part 1: create / load the assessments (Quiz, Mid Exam ...) of a course
+        JPanel setup = new JPanel(new GridLayout(5, 2, 10, 10));
+        setup.setBorder(BorderFactory.createTitledBorder("1. Assessments of the course"));
 
         txtMarkCourse = new JTextField();
+        cmbType = new JComboBox<>(new String[]{"Quiz", "Mid Exam", "Assignment", "Practical", "Presentation"});
+        txtAssessNo = new JTextField();
+        txtWeight = new JTextField();
         JButton btnLoad = new JButton("Load Assessments");
+        JButton btnAdd = new JButton("Add Assessment");
+
+        setup.add(new JLabel("Course ID (e.g. ICT2132):"));
+        setup.add(txtMarkCourse);
+        setup.add(new JLabel("Assessment type:"));
+        setup.add(cmbType);
+        setup.add(new JLabel("Number (optional, e.g. 1):"));
+        setup.add(txtAssessNo);
+        setup.add(new JLabel("Weightage (% of CA):"));
+        setup.add(txtWeight);
+        setup.add(btnLoad);
+        setup.add(btnAdd);
+
+        // Part 2: enter marks for one assessment
+        JPanel marks = new JPanel(new GridLayout(5, 2, 10, 10));
+        marks.setBorder(BorderFactory.createTitledBorder("2. Enter marks"));
+
         cmbAssessment = new JComboBox<>();
+        lblWeightTotal = new JLabel("-");
         txtMarkStudent = new JTextField();
         txtScore = new JTextField();
         JButton btnSave = new JButton("Save Mark");
 
-        form.add(new JLabel("Course ID (e.g. ICT2132):"));
-        form.add(txtMarkCourse);
-        form.add(new JLabel(""));
-        form.add(btnLoad);
-        form.add(new JLabel("Assessment:"));
-        form.add(cmbAssessment);
-        form.add(new JLabel("Student ID (e.g. tg1001):"));
-        form.add(txtMarkStudent);
-        form.add(new JLabel("Score (0 - 100):"));
-        form.add(txtScore);
-        form.add(new JLabel(""));
-        form.add(btnSave);
+        marks.add(new JLabel("Assessment:"));
+        marks.add(cmbAssessment);
+        marks.add(new JLabel("Total CA weightage so far:"));
+        marks.add(lblWeightTotal);
+        marks.add(new JLabel("Student ID (e.g. tg1001):"));
+        marks.add(txtMarkStudent);
+        marks.add(new JLabel("Score (0 - 100):"));
+        marks.add(txtScore);
+        marks.add(new JLabel(""));
+        marks.add(btnSave);
 
         btnLoad.addActionListener(e -> loadAssessments());
+        btnAdd.addActionListener(e -> addAssessment());
         btnSave.addActionListener(e -> saveMark());
 
-        JPanel wrapper = new JPanel(new BorderLayout());
-        wrapper.add(form, BorderLayout.NORTH);
+        JPanel wrapper = new JPanel(new GridLayout(2, 1, 10, 10));
+        wrapper.add(setup);
+        wrapper.add(marks);
         panel.add(wrapper, BorderLayout.CENTER);
         return panel;
     }
@@ -177,14 +204,70 @@ public class LecturerDashboard extends JFrame {
             return;
         }
         try {
-            loadedAssessments = assessmentDAO.getAssessmentsByCourse(courseId);
-            cmbAssessment.removeAllItems();
-            for (Assessment a : loadedAssessments) {
-                cmbAssessment.addItem(a.getName() + " (" + a.getWeightage() + "%)");
-            }
+            refreshAssessments(courseId);
             if (loadedAssessments.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "No assessments found for " + courseId);
+                JOptionPane.showMessageDialog(this,
+                        "No assessments yet for " + courseId + ". Add one using the form above.");
             }
+        } catch (DatabaseException ex) {
+            showError(ex);
+        }
+    }
+
+    /** Reloads the assessments of the course into the list, the combo box and the weightage total. */
+    private void refreshAssessments(String courseId) throws DatabaseException {
+        loadedAssessments = assessmentDAO.getAssessmentsByCourse(courseId);
+        cmbAssessment.removeAllItems();
+        double total = 0;
+        for (Assessment a : loadedAssessments) {
+            cmbAssessment.addItem(a.getName() + " (" + a.getWeightage() + "%)");
+            total += a.getWeightage();
+        }
+        lblWeightTotal.setText(format(total) + " / 100");
+    }
+
+    private void addAssessment() {
+        String courseId = txtMarkCourse.getText().trim();
+        if (courseId.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Enter a course ID first.");
+            return;
+        }
+        try {
+            double weight = Double.parseDouble(txtWeight.getText().trim());
+            if (weight <= 0 || weight > 100) {
+                JOptionPane.showMessageDialog(this, "Weightage must be between 0 and 100.");
+                return;
+            }
+
+            String name = (String) cmbType.getSelectedItem();
+            String number = txtAssessNo.getText().trim();
+            if (!number.isEmpty()) {
+                name = name + " " + number;
+            }
+
+            refreshAssessments(courseId);   // make sure we check against the latest data
+            double total = 0;
+            for (Assessment a : loadedAssessments) {
+                if (a.getName().equalsIgnoreCase(name)) {
+                    JOptionPane.showMessageDialog(this, name + " already exists for " + courseId);
+                    return;
+                }
+                total += a.getWeightage();
+            }
+            if (total + weight > 100) {
+                JOptionPane.showMessageDialog(this, "The total weightage would become "
+                        + format(total + weight) + ", which is more than 100.");
+                return;
+            }
+
+            assessmentDAO.addAssessment(new Assessment(0, courseId, name, weight));
+            refreshAssessments(courseId);
+            txtAssessNo.setText("");
+            txtWeight.setText("");
+            JOptionPane.showMessageDialog(this, name + " added to " + courseId);
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Weightage must be a number.",
+                    "Invalid input", JOptionPane.WARNING_MESSAGE);
         } catch (DatabaseException ex) {
             showError(ex);
         }

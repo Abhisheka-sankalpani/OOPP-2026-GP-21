@@ -1,6 +1,7 @@
 package model;
 
 import exception.InvalidMarkException;
+import util.CACalculator;
 import util.Grade;
 import util.GradeCalculator;
 
@@ -24,17 +25,18 @@ public class Result {
         this.repeat = repeat;
     }
 
-    /** CA total (out of 100) = sum of score x weightage/100 (weightages should add up to 100). */
+    /** Old style: assessment weightages are a % of the CA part itself (they add up to 100). */
     public void calculateCaTotal(java.util.List<Assessment> assessments, java.util.List<Mark> marks) {
-        double total = 0;
-        for (Assessment a : assessments) {
-            for (Mark m : marks) {
-                if (m.getAssessmentId() == a.getAssessmentId() && m.getStudentId().equals(studentId)) {
-                    total += m.getScore() * a.getWeightage() / 100.0;
-                }
-            }
-        }
-        this.caTotal = total;
+        calculateCaTotal(assessments, marks, 100);
+    }
+
+    /**
+     * Weightages are a % of the whole course and add up to caWeight (e.g. 30). Only the best two quizzes count.
+     * caTotal is stored as a percentage of the CA part (out of 100).
+     */
+    public void calculateCaTotal(java.util.List<Assessment> assessments, java.util.List<Mark> marks, double caWeight) {
+        double earned = CACalculator.earned(studentId, assessments, marks);
+        this.caTotal = Math.min(100.0, earned / caWeight * 100.0);
     }
 
     /** caWeight = % of the final total that comes from CA (e.g. 40 or 50, as per the course unit structure). */

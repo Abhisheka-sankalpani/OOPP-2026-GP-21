@@ -92,4 +92,21 @@ public class MedicalDAO {
         }
         return isSuccess;
     }
+    public boolean addMedical(String studentId, String courseId, int sessionNo, String type, String date) {
+        String query = "INSERT INTO medical (student_id, course_id, session_no, session_type, medical_date, approval_status) VALUES (?, ?, ?, ?, ?, 'Pending')";
+        try (java.sql.Connection conn = db.DBConnection.getConnection();
+             java.sql.PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setString(1, studentId);
+            stmt.setString(2, courseId);
+            stmt.setInt(3, sessionNo);
+            stmt.setString(4, type);
+            stmt.setString(5, date);
+
+            return stmt.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

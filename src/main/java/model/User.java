@@ -1,7 +1,11 @@
 
     package model;
 
-    public class User {
+    public abstract class User {
+
+        public User() {
+
+        }
 
         //attributes-encapusation
         private String userId;
@@ -32,6 +36,12 @@
             this.profilePic = profilePic;
             this.role = role;
         }
+        // Abstract Methods
+        public abstract String getRoleTitle();
+
+        public abstract String getRoleSpecificDetails();
+
+        public abstract boolean hasAdminPrivileges();
 
         //Getters
         public String getUserId() {
@@ -60,6 +70,7 @@
         }
 
         //setters
+        public void setUserId(String userId) {this.userId = userId;}
         public  void setPasswordHash(String passwordHash) {
             this.passwordHash = passwordHash;
         }

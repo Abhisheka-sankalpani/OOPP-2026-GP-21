@@ -63,17 +63,39 @@ public class CourseDAO {
     }
 
     public boolean updateCourse(Course course) throws SQLException {
-        String sql = "UPDATE course SET course_name = ?, credit = ? WHERE course_id = ?";
-        try (Connection con = DBConnection.getConnection();
-        PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1,course.getCourseName());
-            ps.setInt(2,course.getCredit());
-            ps.setString(3,course.getCourseId());
 
-            int rows = ps.executeUpdate();
 
-            return rows > 0;
-        }
+            if (!course.isCreditSumValid()) {
+                throw new IllegalArgumentException("Invalid course credits");
+            }
+
+            String sql = "UPDATE course SET " +
+                    "course_name = ?, " +
+                    "credit = ?, " +
+                    "type = ?, " +
+                    "theory_credits = ?, " +
+                    "practical_credits = ?, " +
+                    "has_theory = ?, " +
+                    "has_practical = ? " +
+                    "WHERE course_id = ?";
+
+            try (Connection con = DBConnection.getConnection();
+                 PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setString(1, course.getCourseName());
+                ps.setInt(2, course.getCredit());
+                ps.setString(3, course.getType());
+                ps.setInt(4, course.getTheoryCredits());
+                ps.setInt(5, course.getPracticalCredits());
+                ps.setBoolean(6, course.isHasTheory());
+                ps.setBoolean(7, course.isHasPractical());
+                ps.setString(8, course.getCourseId());
+
+                int rows = ps.executeUpdate();
+
+                return rows > 0;
+            }
 
     }
-}
+
+    }
+

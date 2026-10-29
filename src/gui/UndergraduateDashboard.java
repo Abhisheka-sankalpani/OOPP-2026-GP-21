@@ -1,5 +1,4 @@
 package gui;
-
 import dao.UndergraduateDAO;
 import model.Attendance;
 import model.Undergraduate;
@@ -55,14 +54,12 @@ public class UndergraduateDashboard extends JFrame {
 
         // 2. Tabbed Navigation Pane
         tabbedPane = new JTabbedPane();
+        tabbedPane.addTab("Home", createHomePanel());
         tabbedPane.setFont(new Font("Arial", Font.PLAIN, 14));
 
-        // Add Profile Tab
-        tabbedPane.addTab("My Profile", createProfilePanel());
+
         //Add Attendance Tab
         tabbedPane.addTab("My Attendance", createAttendancePanel());
-        rootPanel.add(tabbedPane, BorderLayout.CENTER);
-        add(rootPanel);
         // Add Medical Tab
         tabbedPane.addTab("My Medicals", createMedicalPanel());
         //Add Course tab
@@ -70,11 +67,16 @@ public class UndergraduateDashboard extends JFrame {
         //Add Course Material Tab
         tabbedPane.addTab("Course Materials", new UndergraduateCourseMaterialForm(studentId));
         //Add Exam Eligibility
-        tabbedPane.addTab("Exam Eligibility", new UndergraduateEligibilityForm(studentId));
+        tabbedPane.addTab("GPA & Exam Eligibility", new UndergraduateEligibilityForm(studentId));
         //Add Timetable Tab
         tabbedPane.addTab("Timetable", new UndergraduateTimetableForm("ICT"));
         //Add Notice Tab
         tabbedPane.addTab("Notices", new UndergraduateNoticeForm());
+        // Add Profile Tab
+        tabbedPane.addTab("My Profile", createProfilePanel());
+        rootPanel.add(tabbedPane, BorderLayout.CENTER);
+        add(rootPanel);
+
     }
 
     private JPanel createHeaderBar() {
@@ -147,7 +149,7 @@ public class UndergraduateDashboard extends JFrame {
             txtProfilePic = new JTextField(currentStudent.getProfilePic());
             JButton btnBrowse = new JButton("Browse...");
 
-            btnBrowse.addActionListener(e -> {
+            btnBrowse.addActionListener(event -> {
                 JFileChooser fileChooser = new JFileChooser();
                 int result = fileChooser.showOpenDialog(panel);
                 if (result == JFileChooser.APPROVE_OPTION) {
@@ -325,6 +327,136 @@ public class UndergraduateDashboard extends JFrame {
             modelMedical.addRow(row);
         }
     }
+    // Home Tab
+    private JPanel createHomePanel() {
+        JPanel panel = new JPanel(new GridLayout(3, 1, 15, 15));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        // 1. Quick Overview Panel
+        JPanel pnlOverview = new JPanel(new GridLayout(1, 3, 15, 15));
+        pnlOverview.setBorder(BorderFactory.createTitledBorder("Quick Overview"));
+
+        String currentGPA = undergraduateDAO.getStudentCGPA(studentId);
+
+        java.util.List<model.Attendance> attList = attendanceDAO.getAttendanceByStudentId(studentId);
+        double totalAtt = 0.0;
+        int courseCount = 0;
+        for (model.Attendance a : attList) {
+            totalAtt += a.getOverallPercentage();
+            courseCount++;
+        }
+        String overallAttendance = (courseCount > 0) ? String.format("%.1f%%", (totalAtt / courseCount)) : "N/A";
+
+        pnlOverview.add(createStudentInfoCard(currentStudent));
+        // 2. Attendance & 3. GPA
+        pnlOverview.add(createSummaryCard("Attendance", overallAttendance));
+        pnlOverview.add(createSummaryCard("Current GPA", currentGPA));
+
+        // 2. Today's Schedule Panel
+        JPanel pnlSchedule = new JPanel(new BorderLayout());
+        pnlSchedule.setBorder(BorderFactory.createTitledBorder("Today's Schedule"));
+
+        String todaySchedule = "  No schedule for today.";
+        try (java.sql.Connection conn = db.DBConnection.getConnection();
+             java.sql.PreparedStatement stmt = conn.prepareStatement(
+                     "SELECT start_time, end_time, course_name, location FROM timetable WHERE day_of_week = DAYNAME(CURDATE()) LIMIT 1")) {
+            try (java.sql.ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    todaySchedule = "  " + rs.getString("start_time") + " - " + rs.getString("end_time") + " : " + rs.getString("course_name") + " (" + rs.getString("location") + ")";
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Timetable DB Error: " + e.getMessage());
+        }
+
+        JLabel lblSchedule = new JLabel(todaySchedule);
+        lblSchedule.setFont(new Font("Arial", Font.PLAIN, 14));
+        pnlSchedule.add(lblSchedule, BorderLayout.CENTER);
+
+        // 3. Recent Notices Panel
+        JPanel pnlNotices = new JPanel(new BorderLayout());
+        pnlNotices.setBorder(BorderFactory.createTitledBorder("Recent Notices"));
+
+        String recentNotice = "  No recent notices.";
+        try (java.sql.Connection conn = db.DBConnection.getConnection();
+             java.sql.PreparedStatement stmt = conn.prepareStatement(
+                     "SELECT posted_date, title FROM notice ORDER BY posted_date DESC LIMIT 1")) {
+            try (java.sql.ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    recentNotice = "  [" + rs.getString("posted_date") + "] " + rs.getString("title");
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Notice DB Error: " + e.getMessage());
+        }
+
+        JLabel lblNotice = new JLabel(recentNotice);
+        lblNotice.setFont(new Font("Arial", Font.PLAIN, 14));
+        pnlNotices.add(lblNotice, BorderLayout.CENTER);
+
+        panel.add(pnlOverview);
+        panel.add(pnlSchedule);
+        panel.add(pnlNotices);
+
+        return panel;
+    }
+
+    private JPanel createSummaryCard(String title, String value) {
+        JPanel card = new JPanel(new GridLayout(2, 1));
+        card.setBackground(new Color(240, 248, 255));
+        card.setBorder(BorderFactory.createLineBorder(new Color(200, 220, 240)));
+
+        JLabel lblTitle = new JLabel(title, SwingConstants.CENTER);
+        lblTitle.setFont(new Font("Arial", Font.BOLD, 14));
+
+        JLabel lblValue = new JLabel(value, SwingConstants.CENTER);
+        lblValue.setFont(new Font("Arial", Font.BOLD, 18));
+        lblValue.setForeground(new Color(0, 102, 204));
+
+        card.add(lblTitle);
+        card.add(lblValue);
+        return card;
+    }
+
+    private JPanel createStudentInfoCard(Undergraduate student) {
+        JPanel card = new JPanel(new BorderLayout(5, 5));
+        card.setBackground(new Color(240, 248, 255));
+        card.setBorder(BorderFactory.createLineBorder(new Color(200, 220, 240)));
+
+        JLabel lblTitle = new JLabel("Student Info", SwingConstants.CENTER);
+        lblTitle.setFont(new Font("Arial", Font.BOLD, 14));
+        card.add(lblTitle, BorderLayout.NORTH);
+
+        JPanel infoPanel = new JPanel(new GridLayout(3, 1));
+        infoPanel.setBackground(new Color(240, 248, 255));
+
+        if (student != null) {
+            JLabel lblReg = new JLabel("Reg No: " + student.getRegNo(), SwingConstants.CENTER);
+            JLabel lblBatch = new JLabel("Batch: " + student.getBatch(), SwingConstants.CENTER);
+            JLabel lblDept = new JLabel("Dept: " + student.getDepartment(), SwingConstants.CENTER);
+
+            Font smallFont = new Font("Arial", Font.BOLD, 12);
+            lblReg.setFont(smallFont);
+            lblBatch.setFont(smallFont);
+            lblDept.setFont(smallFont);
+
+            Color blueColor = new Color(0, 102, 204);
+            lblReg.setForeground(blueColor);
+            lblBatch.setForeground(blueColor);
+            lblDept.setForeground(blueColor);
+
+            infoPanel.add(lblReg);
+            infoPanel.add(lblBatch);
+            infoPanel.add(lblDept);
+        } else {
+            JLabel lblNA = new JLabel("N/A", SwingConstants.CENTER);
+            lblNA.setFont(new Font("Arial", Font.BOLD, 18));
+            infoPanel.add(lblNA);
+        }
+
+        card.add(infoPanel, BorderLayout.CENTER);
+        return card;
+    }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
@@ -333,3 +465,6 @@ public class UndergraduateDashboard extends JFrame {
     }
 
 }
+
+
+

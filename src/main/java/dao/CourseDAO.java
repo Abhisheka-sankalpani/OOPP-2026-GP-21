@@ -62,6 +62,18 @@ public class CourseDAO {
         }
     }
 
+    public boolean updateCourse(Course course) throws SQLException {
+        String sql = "UPDATE course SET course_name = ?, credit = ? WHERE course_id = ?";
+        try (Connection con = DBConnection.getConnection();
+        PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1,course.getCourseName());
+            ps.setInt(2,course.getCredit());
+            ps.setString(3,course.getCourseId());
 
+            int rows = ps.executeUpdate();
 
+            return rows > 0;
+        }
+
+    }
 }

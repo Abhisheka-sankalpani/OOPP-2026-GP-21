@@ -6,6 +6,8 @@ import dao.CourseMaterialDAO;
 import dao.CourseMaterialDAOImpl;
 import dao.MarkDAO;
 import dao.MarkDAOImpl;
+import dao.NoticeBoardDAO;
+import dao.NoticeBoardDAOImpl;
 import dao.ResultDAO;
 import dao.ResultDAOImpl;
 import exception.DatabaseException;
@@ -14,6 +16,7 @@ import model.Assessment;
 import model.LectureMaterial;
 import model.Lecturer;
 import model.Mark;
+import model.NoticeItem;
 import model.Result;
 import util.CACalculator;
 import util.EligibilityChecker;
@@ -56,6 +59,16 @@ public class LecturerDashboard extends JFrame {
     private JCheckBox chkRepeat;
     private JLabel lblResultSummary;
 
+    // Notices tab
+    private final NoticeBoardDAO noticeDAO = new NoticeBoardDAOImpl();
+    private DefaultTableModel noticeTableModel;
+    private JTable noticeTable;
+    private JTextArea txtNoticeView;
+    private JTextField txtNoticeTitle;
+    private JComboBox<String> cmbNoticeTarget;
+    private JTextArea txtNoticeContent;
+    private List<NoticeItem> loadedNotices = new ArrayList<>();
+
     // Course Materials tab
     private final CourseMaterialDAO materialDAO = new CourseMaterialDAOImpl();
     private JTextField txtMatCourse;
@@ -93,6 +106,15 @@ public class LecturerDashboard extends JFrame {
         tabbedPane.addTab("Final Results", createFinalResultPanel());
         tabbedPane.addTab("Grades & GPA", createGradesPanel());
         tabbedPane.addTab("Course Materials", createMaterialsPanel());
+
+        JPanel noticesPanel = createNoticesPanel();
+        tabbedPane.addTab("Notices", noticesPanel);
+        // load the notices every time the Notices tab is opened
+        tabbedPane.addChangeListener(e -> {
+            if (tabbedPane.getSelectedComponent() == noticesPanel) {
+                loadNotices();
+            }
+        });
 
         rootPanel.add(tabbedPane, BorderLayout.CENTER);
         add(rootPanel);
@@ -754,6 +776,125 @@ public class LecturerDashboard extends JFrame {
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(this, "Could not open the file: " + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // ---------------------------------------------------------------- notices
+
+    private JPanel createNoticesPanel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        JLabel lblTitle = new JLabel("Notices");
+        lblTitle.setFont(new Font("Arial", Font.BOLD, 18));
+        panel.add(lblTitle, BorderLayout.NORTH);
+
+        // Part 1: notices for lecturers (and for everyone)
+        String[] columns = {"ID", "Title", "For", "Posted"};
+        noticeTableModel = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        noticeTable = new JTable(noticeTableModel);
+        noticeTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        txtNoticeView = new JTextArea(4, 20);
+        txtNoticeView.setEditable(false);
+        txtNoticeView.setLineWrap(true);
+        txtNoticeView.setWrapStyleWord(true);
+
+        JButton btnRefresh = new JButton("Refresh");
+        btnRefresh.addActionListener(e -> loadNotices());
+        noticeTable.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                onNoticeSelected();
+            }
+        });
+
+        JPanel viewPanel = new JPanel(new BorderLayout(5, 5));
+        viewPanel.setBorder(BorderFactory.createTitledBorder("1. Notices for lecturers"));
+        viewPanel.add(new JScrollPane(noticeTable), BorderLayout.CENTER);
+        JPanel viewBottom = new JPanel(new BorderLayout(5, 5));
+        viewBottom.add(new JScrollPane(txtNoticeView), BorderLayout.CENTER);
+        viewBottom.add(btnRefresh, BorderLayout.EAST);
+        viewPanel.add(viewBottom, BorderLayout.SOUTH);
+
+        // Part 2: post a new notice
+        txtNoticeTitle = new JTextField();
+        cmbNoticeTarget = new JComboBox<>(new String[]{"ALL", "STUDENT", "LECTURER", "TECHNICAL_OFFICER"});
+        txtNoticeContent = new JTextArea(3, 20);
+        txtNoticeContent.setLineWrap(true);
+        txtNoticeContent.setWrapStyleWord(true);
+        JButton btnPost = new JButton("Post Notice");
+        btnPost.addActionListener(e -> postNotice());
+
+        JPanel form = new JPanel(new GridLayout(2, 2, 10, 10));
+        form.add(new JLabel("Title:"));
+        form.add(txtNoticeTitle);
+        form.add(new JLabel("Send to:"));
+        form.add(cmbNoticeTarget);
+
+        JPanel postPanel = new JPanel(new BorderLayout(5, 5));
+        postPanel.setBorder(BorderFactory.createTitledBorder("2. Post a notice"));
+        postPanel.add(form, BorderLayout.NORTH);
+        postPanel.add(new JScrollPane(txtNoticeContent), BorderLayout.CENTER);
+        postPanel.add(btnPost, BorderLayout.SOUTH);
+
+        JPanel wrapper = new JPanel(new GridLayout(2, 1, 10, 10));
+        wrapper.add(viewPanel);
+        wrapper.add(postPanel);
+        panel.add(wrapper, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private void loadNotices() {
+        try {
+            loadedNotices = noticeDAO.getNoticesForRole(lecturer.getRole());
+            noticeTableModel.setRowCount(0);
+            for (NoticeItem n : loadedNotices) {
+                noticeTableModel.addRow(new Object[]{
+                        n.getNoticeId(), n.getTitle(), n.getTargetRole(), n.getPostedDate()
+                });
+            }
+            txtNoticeView.setText("");
+        } catch (DatabaseException ex) {
+            showError(ex);
+        }
+    }
+
+    private void onNoticeSelected() {
+        int row = noticeTable.getSelectedRow();
+        if (row >= 0 && row < loadedNotices.size()) {
+            txtNoticeView.setText(loadedNotices.get(row).getContent());
+            txtNoticeView.setCaretPosition(0);
+        }
+    }
+
+    private void postNotice() {
+        String title = txtNoticeTitle.getText().trim();
+        String body = txtNoticeContent.getText().trim();
+        if (title.isEmpty() || body.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Enter a title and the notice text.");
+            return;
+        }
+        if (title.length() > 100) {
+            JOptionPane.showMessageDialog(this, "The title can have at most 100 characters.");
+            return;
+        }
+        String target = (String) cmbNoticeTarget.getSelectedItem();
+        // the notice table has no "posted by" column, so the name is added to the text
+        String content = body + "\n\n- Posted by " + lecturer.getFirstName() + " "
+                + lecturer.getLastName() + " (Lecturer)";
+        try {
+            noticeDAO.addNotice(new NoticeItem(0, title, content, null, target));
+            txtNoticeTitle.setText("");
+            txtNoticeContent.setText("");
+            loadNotices();
+            JOptionPane.showMessageDialog(this, "Notice posted to " + target);
+        } catch (DatabaseException ex) {
+            showError(ex);
         }
     }
 

@@ -16,6 +16,15 @@ public class UndergraduateAttendanceForm extends JFrame {
     private AttendanceDAO attendanceDAO;
     private JTable tableAttendance;
     private DefaultTableModel tableModel;
+    private JLabel lblProfileImage = new JLabel();
+
+    private void updateProfileImage(String path) {
+        if (path != null && !path.isEmpty()) {
+            ImageIcon icon = new ImageIcon(path);
+            Image img = icon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
+            lblProfileImage.setIcon(new ImageIcon(img));
+        }
+    }
 
     public UndergraduateAttendanceForm(String studentId) {
         this.studentId = studentId;

@@ -2,6 +2,7 @@ package gui;
 import dao.UndergraduateDAO;
 import model.Attendance;
 import model.Undergraduate;
+import model.Medical;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -26,16 +27,12 @@ public class UndergraduateDashboard extends JFrame {
     private javax.swing.table.DefaultTableModel modelAttendance;
     private JLabel lblAttendanceSummary;
     private JTable tableAttendance;
-    private dao.MedicalDAO medicalDAO;
-    private JTable tableMedical;
-    private DefaultTableModel modelMedical;
 
     public UndergraduateDashboard(String studentId) {
         this.studentId = studentId;
         this.undergraduateDAO = new UndergraduateDAO();
         this.currentStudent = undergraduateDAO.getStudentById(this.studentId);
         this.attendanceDAO = new dao.AttendanceDAO();
-        this.medicalDAO = new dao.MedicalDAO();
 
         setTitle("Undergraduate Portal");
         setSize(900, 600);
@@ -61,7 +58,7 @@ public class UndergraduateDashboard extends JFrame {
         //Add Attendance Tab
         tabbedPane.addTab("My Attendance", createAttendancePanel());
         // Add Medical Tab
-        tabbedPane.addTab("My Medicals", createMedicalPanel());
+        tabbedPane.addTab("My Medicals", new UndergraduateMedicalForm(studentId));
         //Add Course tab
         tabbedPane.addTab("My Courses", new UndergraduateCourseForm(studentId));
         //Add Course Material Tab
@@ -73,7 +70,7 @@ public class UndergraduateDashboard extends JFrame {
         //Add Notice Tab
         tabbedPane.addTab("Notices", new UndergraduateNoticeForm());
         // Add Profile Tab
-        tabbedPane.addTab("My Profile", createProfilePanel());
+        tabbedPane.addTab("My Profile", new UndergraduateProfileForm(studentId));
         rootPanel.add(tabbedPane, BorderLayout.CENTER);
         add(rootPanel);
 
@@ -109,88 +106,6 @@ public class UndergraduateDashboard extends JFrame {
         return bar;
     }
 
-    private JPanel createProfilePanel() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
-
-        JLabel lblTitle = new JLabel("My Profile Information");
-        lblTitle.setFont(new Font("Arial", Font.BOLD, 18));
-        panel.add(lblTitle, BorderLayout.NORTH);
-
-        JPanel centerPanel = new JPanel(new GridLayout(8, 2, 10, 10));
-
-        if (currentStudent != null) {
-            centerPanel.add(new JLabel("Student ID:"));
-            centerPanel.add(new JLabel(currentStudent.getStudentId()));
-
-            centerPanel.add(new JLabel("Registration No:"));
-            centerPanel.add(new JLabel(currentStudent.getRegNo()));
-
-            centerPanel.add(new JLabel("Full Name:"));
-            centerPanel.add(new JLabel(currentStudent.getFullName()));
-
-            centerPanel.add(new JLabel("Department:"));
-            centerPanel.add(new JLabel(currentStudent.getDepartment()));
-
-            // Email
-            centerPanel.add(new JLabel("Email:"));
-            txtEmail = new JTextField(currentStudent.getEmail());
-            centerPanel.add(txtEmail);
-
-            // Contact Number
-            centerPanel.add(new JLabel("Contact Number:"));
-            txtContact = new JTextField(currentStudent.getContactNo());
-            centerPanel.add(txtContact);
-
-            // Profile Picture
-            centerPanel.add(new JLabel("Profile Picture:"));
-
-            JPanel picPanel = new JPanel(new BorderLayout(5, 0));
-            txtProfilePic = new JTextField(currentStudent.getProfilePic());
-            JButton btnBrowse = new JButton("Browse...");
-
-            btnBrowse.addActionListener(event -> {
-                JFileChooser fileChooser = new JFileChooser();
-                int result = fileChooser.showOpenDialog(panel);
-                if (result == JFileChooser.APPROVE_OPTION) {
-                    txtProfilePic.setText(fileChooser.getSelectedFile().getAbsolutePath());
-                }
-            });
-
-            picPanel.add(txtProfilePic, BorderLayout.CENTER);
-            picPanel.add(btnBrowse, BorderLayout.EAST);
-
-            centerPanel.add(picPanel);
-
-            // Update button
-            centerPanel.add(new JLabel(""));
-            JButton btnUpdate = new JButton("Update");
-
-            btnUpdate.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    // 1. Get Data in Text Field
-                    String email = txtEmail.getText();
-                    String contactNo = txtContact.getText();
-                    String profilePicPath = txtProfilePic.getText();
-
-                    // 2. Update database
-                    boolean isSuccess = undergraduateDAO.updateContactDetails(studentId, email, contactNo, profilePicPath);
-
-                    if (isSuccess == true) {
-                        JOptionPane.showMessageDialog(panel, "Updated Successfully!");
-                    }
-                }
-            });
-
-            centerPanel.add(btnUpdate);
-        } else {
-            centerPanel.add(new JLabel("Student data not found in Database!"));
-        }
-
-        panel.add(centerPanel, BorderLayout.CENTER);
-        return panel;
-    }
     private JPanel createAttendancePanel() {
         JPanel panel = new JPanel(new BorderLayout(15, 12));
         panel.setBorder(BorderFactory.createEmptyBorder(18, 24, 18, 24));
@@ -272,61 +187,7 @@ public class UndergraduateDashboard extends JFrame {
 
         lblAttendanceSummary.setText("Eligible Course Modules: " + eligibleCount + " of " + total + " enrolled courses.");
     }
-    //MY MEDICALS
-    private JPanel createMedicalPanel() {
-        JPanel panel = new JPanel(new BorderLayout(15, 12));
-        panel.setBorder(BorderFactory.createEmptyBorder(18, 24, 18, 24));
 
-        JPanel topPanel = new JPanel(new BorderLayout());
-
-        JLabel lblTitle = new JLabel("My Medical Submissions");
-        lblTitle.setFont(new Font("Arial", Font.BOLD, 18));
-        topPanel.add(lblTitle, BorderLayout.WEST);
-
-        // Refresh button
-        JButton btnRefreshMed = new JButton("Refresh");
-        btnRefreshMed.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                loadMedicalData();
-            }
-        });
-        topPanel.add(btnRefreshMed, BorderLayout.EAST);
-
-        panel.add(topPanel, BorderLayout.NORTH);
-
-        String[] colNames = {"Course ID", "Session No", "Type", "Medical Date", "Status"};
-        modelMedical = new DefaultTableModel(colNames, 0) {
-            @Override
-            public boolean isCellEditable(int r, int c) {
-                return false;
-            }
-        };
-
-        tableMedical = new JTable(modelMedical);
-        tableMedical.setRowHeight(25);
-
-        JScrollPane scrollPane = new JScrollPane(tableMedical);
-        panel.add(scrollPane, BorderLayout.CENTER);
-
-        return panel;
-    }
-
-    private void loadMedicalData() {
-        modelMedical.setRowCount(0);
-        java.util.List<model.Medical> list = medicalDAO.getMedicalsByStudentId(studentId);
-
-        for (model.Medical m : list) {
-            Object[] row = {
-                    m.getCourseId(),
-                    "Session " + m.getSessionNo(),
-                    m.getSessionType(),
-                    m.getMedicalDate(),
-                    m.getApprovalStatus()
-            };
-            modelMedical.addRow(row);
-        }
-    }
     // Home Tab
     private JPanel createHomePanel() {
         JPanel panel = new JPanel(new GridLayout(3, 1, 15, 15));

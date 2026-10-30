@@ -6,8 +6,7 @@ import model.Undergraduate;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.io.File;
 
 public class UndergraduateProfileForm extends JPanel {
 
@@ -19,17 +18,194 @@ public class UndergraduateProfileForm extends JPanel {
     private JTextField txtContact;
     private String profilePicPath = "";
     private JLabel lblProfileImage = new JLabel();
+    private Runnable onProfileUpdated;
+
+    public void setOnProfileUpdated(Runnable onProfileUpdated) {
+        this.onProfileUpdated = onProfileUpdated;
+    }
+
+    public UndergraduateProfileForm(String studentId) {
+        this.studentId = studentId;
+        this.undergraduateDAO = new UndergraduateDAO();
+        this.currentStudent = undergraduateDAO.getStudentById(this.studentId);
+
+        setLayout(new BorderLayout(0, 16));
+        setBackground(UITheme.COLOR_BG);
+        setBorder(new EmptyBorder(20, 24, 20, 24));
+
+        initUI();
+    }
+
+    private void initUI() {
+        // 1. Header
+        JPanel header = UITheme.createTabHeader(
+                "My Profile Information",
+                "View and manage your student enrollment details, contact numbers, and profile photo.",
+                null
+        );
+        add(header, BorderLayout.NORTH);
+
+        // 2. Center Content
+        JPanel centerPanel = new JPanel(new BorderLayout(18, 0));
+        centerPanel.setOpaque(false);
+
+        // Student Profile Information
+        JPanel detailsCard = UITheme.createCardPanel();
+        detailsCard.setLayout(new BorderLayout(0, 16));
+
+        JLabel lblCardTitle = new JLabel("Academic & Contact Particulars");
+        lblCardTitle.setFont(UITheme.FONT_SECTION);
+        lblCardTitle.setForeground(UITheme.COLOR_TEXT_MAIN);
+        detailsCard.add(lblCardTitle, BorderLayout.NORTH);
+
+        JPanel fieldsPanel = new JPanel(new GridLayout(6, 2, 14, 14));
+        fieldsPanel.setOpaque(false);
+
+        if (currentStudent != null) {
+            profilePicPath = currentStudent.getProfilePic();
+
+            fieldsPanel.add(createReadonlyRow("Student ID (System ID):", currentStudent.getStudentId()));
+            fieldsPanel.add(createReadonlyRow("Registration Number:", currentStudent.getRegNo()));
+            fieldsPanel.add(createReadonlyRow("Full Name:", currentStudent.getFullName()));
+            fieldsPanel.add(createReadonlyRow("Academic Department:", currentStudent.getDepartment()));
+            fieldsPanel.add(createReadonlyRow("Academic Batch:", currentStudent.getBatch()));
+            fieldsPanel.add(createReadonlyRow("Student Status:", currentStudent.isRepeat() ? "Repeat Student" : "Regular Undergraduate"));
+
+            // Editable Fields Card
+            JPanel editContainer = new JPanel(new GridLayout(2, 2, 14, 12));
+            editContainer.setOpaque(false);
+
+            txtEmail = new JTextField(currentStudent.getEmail() != null ? currentStudent.getEmail() : "");
+            txtEmail.setFont(UITheme.FONT_BODY);
+            txtContact = new JTextField(currentStudent.getContactNo() != null ? currentStudent.getContactNo() : "");
+            txtContact.setFont(UITheme.FONT_BODY);
+
+            editContainer.add(createEditRow("Email Address:", txtEmail));
+            editContainer.add(createEditRow("Contact Phone Number:", txtContact));
+
+            JPanel leftContent = new JPanel();
+            leftContent.setLayout(new BoxLayout(leftContent, BoxLayout.Y_AXIS));
+            leftContent.setOpaque(false);
+            leftContent.add(fieldsPanel);
+            leftContent.add(Box.createVerticalStrut(16));
+            leftContent.add(new JSeparator());
+            leftContent.add(Box.createVerticalStrut(16));
+            leftContent.add(editContainer);
+
+            // Bottom Update Button
+            JButton btnUpdate = UITheme.createPrimaryButton("Save Profile Changes");
+            btnUpdate.addActionListener(e -> {
+                String email = txtEmail.getText().trim();
+                String contactNo = txtContact.getText().trim();
+
+                if (email.isEmpty() || contactNo.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Email and Contact Number cannot be empty!", "Validation", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                boolean isSuccess = undergraduateDAO.updateContactDetails(studentId, email, contactNo, profilePicPath);
+                if (isSuccess) {
+                    JOptionPane.showMessageDialog(this, "Profile updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                    if (onProfileUpdated != null) {
+                        onProfileUpdated.run();
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(this, "Failed to update profile details.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            });
+
+            JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 10));
+            btnRow.setOpaque(false);
+            btnRow.add(btnUpdate);
+
+            leftContent.add(btnRow);
+            detailsCard.add(leftContent, BorderLayout.CENTER);
+        } else {
+            detailsCard.add(new JLabel("Student data could not be retrieved from the database."), BorderLayout.CENTER);
+        }
+
+        centerPanel.add(detailsCard, BorderLayout.CENTER);
+
+        //  Profile Picture
+        JPanel avatarCard = UITheme.createCardPanel();
+        avatarCard.setLayout(new BoxLayout(avatarCard, BoxLayout.Y_AXIS));
+        avatarCard.setPreferredSize(new Dimension(280, 0));
+
+        JLabel lblAvatarTitle = new JLabel("Profile Picture");
+        lblAvatarTitle.setFont(UITheme.FONT_SECTION);
+        lblAvatarTitle.setForeground(UITheme.COLOR_TEXT_MAIN);
+        lblAvatarTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+        avatarCard.add(lblAvatarTitle);
+        avatarCard.add(Box.createVerticalStrut(20));
+
+        updateProfileImage(profilePicPath);
+        lblProfileImage.setAlignmentX(Component.CENTER_ALIGNMENT);
+        avatarCard.add(lblProfileImage);
+        avatarCard.add(Box.createVerticalStrut(20));
+
+        JButton btnBrowse = UITheme.createSecondaryButton("Upload Photo...");
+        btnBrowse.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnBrowse.addActionListener(e -> {
+            JFileChooser fileChooser = new JFileChooser();
+            if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+                profilePicPath = fileChooser.getSelectedFile().getAbsolutePath();
+                updateProfileImage(profilePicPath);
+            }
+        });
+        avatarCard.add(btnBrowse);
+        avatarCard.add(Box.createVerticalStrut(10));
+
+        JLabel lblHint = new JLabel("Supported: JPG, PNG, JPEG");
+        lblHint.setFont(UITheme.FONT_SMALL);
+        lblHint.setForeground(UITheme.COLOR_TEXT_MUTED);
+        lblHint.setAlignmentX(Component.CENTER_ALIGNMENT);
+        avatarCard.add(lblHint);
+
+        centerPanel.add(avatarCard, BorderLayout.EAST);
+        add(centerPanel, BorderLayout.CENTER);
+    }
+
+    private JPanel createReadonlyRow(String label, String value) {
+        JPanel p = new JPanel(new BorderLayout(0, 4));
+        p.setOpaque(false);
+
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(UITheme.FONT_SMALL);
+        lbl.setForeground(UITheme.COLOR_TEXT_MUTED);
+
+        JLabel val = new JLabel((value != null && !value.isEmpty()) ? value : "N/A");
+        val.setFont(UITheme.FONT_BODY_BOLD);
+        val.setForeground(UITheme.COLOR_TEXT_MAIN);
+
+        p.add(lbl, BorderLayout.NORTH);
+        p.add(val, BorderLayout.CENTER);
+        return p;
+    }
+
+    private JPanel createEditRow(String label, JTextField field) {
+        JPanel p = new JPanel(new BorderLayout(0, 4));
+        p.setOpaque(false);
+
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(UITheme.FONT_BODY_BOLD);
+        lbl.setForeground(UITheme.COLOR_TEXT_MAIN);
+
+        p.add(lbl, BorderLayout.NORTH);
+        p.add(field, BorderLayout.CENTER);
+        return p;
+    }
 
     private void updateProfileImage(String path) {
-        if (path != null && !path.isEmpty() && new java.io.File(path).exists()) {
+        if (path != null && !path.isEmpty() && new File(path).exists()) {
             ImageIcon icon = new ImageIcon(path);
-            Image img = icon.getImage().getScaledInstance(130, 130, Image.SCALE_SMOOTH);
+            Image img = icon.getImage().getScaledInstance(140, 140, Image.SCALE_SMOOTH);
             lblProfileImage.setIcon(new ImageIcon(img));
             lblProfileImage.setText("");
+            lblProfileImage.setBorder(BorderFactory.createLineBorder(UITheme.COLOR_CARD_BORDER, 2));
         } else {
             lblProfileImage.setIcon(null);
 
-            String initials = "U";
+            String initials = "ST";
             if (currentStudent != null && currentStudent.getFullName() != null) {
                 String[] parts = currentStudent.getFullName().trim().split("\\s+");
                 if (parts.length >= 2) {
@@ -40,114 +216,17 @@ public class UndergraduateProfileForm extends JPanel {
             }
 
             lblProfileImage.setText(initials);
-            lblProfileImage.setFont(new Font("Arial", Font.BOLD, 36));
-            lblProfileImage.setForeground(Color.DARK_GRAY);
+            lblProfileImage.setFont(new Font("Segoe UI", Font.BOLD, 42));
+            lblProfileImage.setForeground(UITheme.COLOR_PRIMARY);
             lblProfileImage.setHorizontalAlignment(SwingConstants.CENTER);
             lblProfileImage.setVerticalAlignment(SwingConstants.CENTER);
 
-            lblProfileImage.setPreferredSize(new Dimension(130, 130));
-            lblProfileImage.setMinimumSize(new Dimension(130, 130));
-            lblProfileImage.setMaximumSize(new Dimension(130, 130));
+            lblProfileImage.setPreferredSize(new Dimension(140, 140));
+            lblProfileImage.setMinimumSize(new Dimension(140, 140));
+            lblProfileImage.setMaximumSize(new Dimension(140, 140));
             lblProfileImage.setOpaque(true);
-            lblProfileImage.setBackground(new Color(220, 220, 220));
-            lblProfileImage.setBorder(BorderFactory.createLineBorder(Color.GRAY, 1));
+            lblProfileImage.setBackground(new Color(239, 246, 255));
+            lblProfileImage.setBorder(BorderFactory.createLineBorder(new Color(191, 219, 254), 2));
         }
-    }
-
-    public UndergraduateProfileForm(String studentId) {
-        this.studentId = studentId;
-        this.undergraduateDAO = new UndergraduateDAO();
-        this.currentStudent = undergraduateDAO.getStudentById(this.studentId);
-
-        setLayout(new BorderLayout(10, 10));
-        setBorder(new EmptyBorder(20, 20, 20, 20));
-
-        initUI();
-    }
-
-    private void initUI() {
-        JLabel lblTitle = new JLabel("My Profile Information");
-        lblTitle.setFont(new Font("Arial", Font.BOLD, 18));
-        add(lblTitle, BorderLayout.NORTH);
-
-        JPanel centerPanel = new JPanel(new GridLayout(7, 2, 10, 10));
-
-        if (currentStudent != null) {
-            profilePicPath = currentStudent.getProfilePic();
-            updateProfileImage(profilePicPath);
-
-            centerPanel.add(new JLabel("Student ID:"));
-            centerPanel.add(new JLabel(currentStudent.getStudentId()));
-
-            centerPanel.add(new JLabel("Registration No:"));
-            centerPanel.add(new JLabel(currentStudent.getRegNo()));
-
-            centerPanel.add(new JLabel("Full Name:"));
-            centerPanel.add(new JLabel(currentStudent.getFullName()));
-
-            centerPanel.add(new JLabel("Department:"));
-            centerPanel.add(new JLabel(currentStudent.getDepartment()));
-
-            // Email Field
-            centerPanel.add(new JLabel("Email:"));
-            JPanel emailPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-            txtEmail = new JTextField(currentStudent.getEmail(), 20);
-            emailPanel.add(txtEmail);
-            centerPanel.add(emailPanel);
-
-            // Contact Number Field
-            centerPanel.add(new JLabel("Contact Number:"));
-            JPanel contactPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-            txtContact = new JTextField(currentStudent.getContactNo(), 20);
-            contactPanel.add(txtContact);
-            centerPanel.add(contactPanel);
-
-            centerPanel.add(new JLabel(""));
-            JButton btnUpdate = new JButton("Update");
-
-            btnUpdate.addActionListener(e -> {
-                String email = txtEmail.getText();
-                String contactNo = txtContact.getText();
-                boolean isSuccess = undergraduateDAO.updateContactDetails(studentId, email, contactNo, profilePicPath);
-
-                if (isSuccess) {
-                    JOptionPane.showMessageDialog(UndergraduateProfileForm.this, "Updated Successfully!");
-                } else {
-                    JOptionPane.showMessageDialog(UndergraduateProfileForm.this, "Update Failed!", "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            });
-            JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-            btnPanel.add(btnUpdate);
-            centerPanel.add(btnPanel);
-
-        } else {
-            centerPanel.add(new JLabel("Student data not found in Database!"));
-        }
-
-        JPanel rightPanel = new JPanel();
-        rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
-        rightPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 10));
-
-        lblProfileImage.setAlignmentX(Component.CENTER_ALIGNMENT);
-        rightPanel.add(lblProfileImage);
-        rightPanel.add(Box.createVerticalStrut(15));
-
-        JButton btnBrowse = new JButton("Edit Profile");
-        btnBrowse.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        btnBrowse.addActionListener(e -> {
-            JFileChooser fileChooser = new JFileChooser();
-            if (fileChooser.showOpenDialog(UndergraduateProfileForm.this) == JFileChooser.APPROVE_OPTION) {
-                profilePicPath = fileChooser.getSelectedFile().getAbsolutePath();
-                updateProfileImage(profilePicPath);
-            }
-        });
-        rightPanel.add(btnBrowse);
-
-        JPanel mainContentPanel = new JPanel(new BorderLayout(20, 0));
-        mainContentPanel.add(centerPanel, BorderLayout.CENTER);
-        mainContentPanel.add(rightPanel, BorderLayout.EAST);
-
-        add(mainContentPanel, BorderLayout.CENTER);
     }
 }

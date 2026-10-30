@@ -4,10 +4,10 @@ import dao.CourseMaterialDAO;
 import model.CourseMaterial;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,8 +26,9 @@ public class UndergraduateCourseMaterialForm extends JPanel {
         this.studentId = studentId;
         this.courseMaterialDAO = new CourseMaterialDAO();
 
-        setLayout(new BorderLayout(15, 12));
-        setBorder(BorderFactory.createEmptyBorder(18, 24, 18, 24));
+        setLayout(new BorderLayout(0, 16));
+        setBackground(UITheme.COLOR_BG);
+        setBorder(new EmptyBorder(20, 24, 20, 24));
 
         initUI();
         populateCourseDropdown();
@@ -35,47 +36,56 @@ public class UndergraduateCourseMaterialForm extends JPanel {
     }
 
     private void initUI() {
-        //Top Panel
-        JPanel topPanel = new JPanel(new BorderLayout());
+        // 1. Top Header & Action Controls
+        JPanel topActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        topActions.setOpaque(false);
 
-        // Filter
-        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JLabel lblFilter = new JLabel("Filter by Course: ");
-        lblFilter.setFont(new Font("Arial", Font.BOLD, 14));
-        cmbCourseFilter = new JComboBox<>();
-        cmbCourseFilter.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (cmbCourseFilter.getSelectedItem() != null) {
-                    loadMaterialData(cmbCourseFilter.getSelectedItem().toString());
-                }
-            }
-        });
-        filterPanel.add(lblFilter);
-        filterPanel.add(cmbCourseFilter);
-        topPanel.add(filterPanel, BorderLayout.WEST);
-
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-
-        JButton btnOpenFile = new JButton("Open Selected File");
-        btnOpenFile.setBackground(new Color(41, 128, 185));
-        btnOpenFile.setForeground(Color.WHITE);
+        JButton btnOpenFile = UITheme.createPrimaryButton("Open Selected File");
         btnOpenFile.addActionListener(e -> openSelectedFile());
 
-        JButton btnRefresh = new JButton("Refresh");
+        JButton btnRefresh = UITheme.createSecondaryButton("Refresh Materials");
         btnRefresh.addActionListener(e -> {
             populateCourseDropdown();
-            loadMaterialData("All Courses");
+            loadMaterialData(cmbCourseFilter.getSelectedItem() != null ? cmbCourseFilter.getSelectedItem().toString() : "All Courses");
         });
 
-        btnPanel.add(btnOpenFile);
-        btnPanel.add(btnRefresh);
-        topPanel.add(btnPanel, BorderLayout.EAST);
+        topActions.add(btnOpenFile);
+        topActions.add(btnRefresh);
 
-        add(topPanel, BorderLayout.NORTH);
+        JPanel header = UITheme.createTabHeader(
+                "Course Materials & Learning Resources",
+                "Download and access lecture slides, assignments, and laboratory guides.",
+                topActions
+        );
+        add(header, BorderLayout.NORTH);
 
-        //Table Panel
-        String[] colNames = {"Material ID", "Course ID", "Title", "File Path", "Uploaded Date"};
+        // 2. Table Card with Filter Bar
+        JPanel card = UITheme.createCardPanel();
+        card.setLayout(new BorderLayout(0, 14));
+
+        // Filter Bar inside Card
+        JPanel filterBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        filterBar.setOpaque(false);
+
+        JLabel lblFilter = new JLabel("Filter by Course:");
+        lblFilter.setFont(UITheme.FONT_BODY_BOLD);
+        lblFilter.setForeground(UITheme.COLOR_TEXT_MAIN);
+
+        cmbCourseFilter = new JComboBox<>();
+        cmbCourseFilter.setFont(UITheme.FONT_BODY);
+        cmbCourseFilter.setPreferredSize(new Dimension(200, 32));
+        cmbCourseFilter.addActionListener(e -> {
+            if (cmbCourseFilter.getSelectedItem() != null) {
+                loadMaterialData(cmbCourseFilter.getSelectedItem().toString());
+            }
+        });
+
+        filterBar.add(lblFilter);
+        filterBar.add(cmbCourseFilter);
+        card.add(filterBar, BorderLayout.NORTH);
+
+        // Table
+        String[] colNames = {"Material ID", "Course ID", "Resource Title", "Document File Path", "Uploaded Date"};
         modelMaterial = new DefaultTableModel(colNames, 0) {
             @Override
             public boolean isCellEditable(int r, int c) {
@@ -84,16 +94,33 @@ public class UndergraduateCourseMaterialForm extends JPanel {
         };
 
         tableMaterial = new JTable(modelMaterial);
-        tableMaterial.setRowHeight(25);
+        UITheme.styleTable(tableMaterial);
         tableMaterial.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        JScrollPane scrollPane = new JScrollPane(tableMaterial);
-        add(scrollPane, BorderLayout.CENTER);
+        tableMaterial.getColumnModel().getColumn(0).setPreferredWidth(90);
+        tableMaterial.getColumnModel().getColumn(1).setPreferredWidth(100);
+        tableMaterial.getColumnModel().getColumn(2).setPreferredWidth(260);
+        tableMaterial.getColumnModel().getColumn(3).setPreferredWidth(340);
+        tableMaterial.getColumnModel().getColumn(4).setPreferredWidth(150);
 
-        // Bottom Panel
-        lblMaterialSummary = new JLabel("Total Materials: Calculating...");
-        lblMaterialSummary.setFont(new Font("Arial", Font.BOLD, 12));
-        add(lblMaterialSummary, BorderLayout.SOUTH);
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+        tableMaterial.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
+        tableMaterial.getColumnModel().getColumn(1).setCellRenderer(centerRenderer);
+        tableMaterial.getColumnModel().getColumn(4).setCellRenderer(centerRenderer);
+
+        JScrollPane scrollPane = new JScrollPane(tableMaterial);
+        scrollPane.setBorder(BorderFactory.createLineBorder(UITheme.COLOR_CARD_BORDER, 1));
+        scrollPane.getViewport().setBackground(Color.WHITE);
+        card.add(scrollPane, BorderLayout.CENTER);
+
+        // Footer Summary
+        lblMaterialSummary = new JLabel("Total Available Materials: Calculating...");
+        lblMaterialSummary.setFont(UITheme.FONT_BODY_BOLD);
+        lblMaterialSummary.setForeground(UITheme.COLOR_TEXT_MAIN);
+        card.add(lblMaterialSummary, BorderLayout.SOUTH);
+
+        add(card, BorderLayout.CENTER);
     }
 
     private void populateCourseDropdown() {
@@ -115,7 +142,7 @@ public class UndergraduateCourseMaterialForm extends JPanel {
         modelMaterial.setRowCount(0);
         List<CourseMaterial> list;
 
-        if (selectedCourse.equals("All Courses")) {
+        if (selectedCourse == null || selectedCourse.equals("All Courses")) {
             list = courseMaterialDAO.getAllMaterials();
         } else {
             list = courseMaterialDAO.getMaterialsByCourse(selectedCourse);
@@ -137,7 +164,7 @@ public class UndergraduateCourseMaterialForm extends JPanel {
     private void openSelectedFile() {
         int selectedRow = tableMaterial.getSelectedRow();
         if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Please select a material from the table first.", "Warning", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Please select a material from the table first.", "Select Material", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -159,7 +186,7 @@ public class UndergraduateCourseMaterialForm extends JPanel {
                 JOptionPane.showMessageDialog(this, "File not found at:\n" + filePath, "File Missing", JOptionPane.ERROR_MESSAGE);
             }
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Could not open the file:\n" + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Error opening file: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 }

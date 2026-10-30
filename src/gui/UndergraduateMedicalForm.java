@@ -2,11 +2,13 @@ package gui;
 
 import dao.MedicalDAO;
 import model.Medical;
+
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.io.File;
 import java.util.List;
 
 public class UndergraduateMedicalForm extends JPanel {
@@ -27,26 +29,40 @@ public class UndergraduateMedicalForm extends JPanel {
         this.studentId = studentId;
         this.medicalDAO = new MedicalDAO();
 
-        setLayout(new BorderLayout(15, 12));
-        setBorder(BorderFactory.createEmptyBorder(18, 24, 18, 24));
+        setLayout(new BorderLayout(0, 16));
+        setBackground(UITheme.COLOR_BG);
+        setBorder(new EmptyBorder(20, 24, 20, 24));
 
         initUI();
         loadMedicalData();
     }
 
     private void initUI() {
-        JPanel topPanel = new JPanel(new BorderLayout());
-        JLabel lblTitle = new JLabel("My Medical Submissions");
-        lblTitle.setFont(new Font("Arial", Font.BOLD, 18));
-        topPanel.add(lblTitle, BorderLayout.WEST);
+        // 1. Header
+        JButton btnRefresh = UITheme.createSecondaryButton("Refresh Submissions");
+        btnRefresh.addActionListener(e -> loadMedicalData());
 
-        JButton btnRefreshMed = new JButton("Refresh");
-        btnRefreshMed.addActionListener(e -> loadMedicalData());
-        topPanel.add(btnRefreshMed, BorderLayout.EAST);
+        JPanel header = UITheme.createTabHeader(
+                "My Medical Submissions",
+                "Submit and track medical certificates for missed lectures and laboratory practicals.",
+                btnRefresh
+        );
+        add(header, BorderLayout.NORTH);
 
-        add(topPanel, BorderLayout.NORTH);
+        // 2. Center Content
+        JPanel centerPanel = new JPanel(new BorderLayout(0, 16));
+        centerPanel.setOpaque(false);
 
-        String[] colNames = {"Course ID", "Session No", "Type", "Medical Date", "Status"};
+        // Top Card: Table of Submissions
+        JPanel tableCard = UITheme.createCardPanel();
+        tableCard.setLayout(new BorderLayout(0, 10));
+
+        JLabel lblTableTitle = new JLabel("Submitted Medical Records");
+        lblTableTitle.setFont(UITheme.FONT_SECTION);
+        lblTableTitle.setForeground(UITheme.COLOR_TEXT_MAIN);
+        tableCard.add(lblTableTitle, BorderLayout.NORTH);
+
+        String[] colNames = {"Course ID", "Session Number", "Session Type", "Medical Date", "Approval Status"};
         modelMedical = new DefaultTableModel(colNames, 0) {
             @Override
             public boolean isCellEditable(int r, int c) {
@@ -55,23 +71,52 @@ public class UndergraduateMedicalForm extends JPanel {
         };
 
         tableMedical = new JTable(modelMedical);
-        tableMedical.setRowHeight(25);
-        add(new JScrollPane(tableMedical), BorderLayout.CENTER);
+        UITheme.styleTable(tableMedical);
 
-        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 6));
-        bottomPanel.setBorder(BorderFactory.createTitledBorder("Submit New Medical"));
-        bottomPanel.setBackground(new Color(240, 248, 255));
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
 
-        txtCourseId = new JTextField(4);
-        txtSessionNo = new JTextField(2);
+        tableMedical.getColumnModel().getColumn(0).setPreferredWidth(120);
+        tableMedical.getColumnModel().getColumn(1).setPreferredWidth(140);
+        tableMedical.getColumnModel().getColumn(1).setCellRenderer(centerRenderer);
+        tableMedical.getColumnModel().getColumn(2).setPreferredWidth(140);
+        tableMedical.getColumnModel().getColumn(2).setCellRenderer(centerRenderer);
+        tableMedical.getColumnModel().getColumn(3).setPreferredWidth(140);
+        tableMedical.getColumnModel().getColumn(3).setCellRenderer(centerRenderer);
+        tableMedical.getColumnModel().getColumn(4).setPreferredWidth(140);
+        tableMedical.getColumnModel().getColumn(4).setCellRenderer(new UITheme.StatusBadgeRenderer());
+
+        JScrollPane scrollPane = new JScrollPane(tableMedical);
+        scrollPane.setBorder(BorderFactory.createLineBorder(UITheme.COLOR_CARD_BORDER, 1));
+        scrollPane.getViewport().setBackground(Color.WHITE);
+        scrollPane.setPreferredSize(new Dimension(scrollPane.getPreferredSize().width, 180));
+        tableCard.add(scrollPane, BorderLayout.CENTER);
+
+        centerPanel.add(tableCard, BorderLayout.CENTER);
+
+        // Submit New Medical Form
+        JPanel formCard = UITheme.createCardPanel();
+        formCard.setLayout(new BorderLayout(0, 12));
+
+        JLabel lblFormTitle = new JLabel("Submit New Medical Certificate");
+        lblFormTitle.setFont(UITheme.FONT_SECTION);
+        lblFormTitle.setForeground(UITheme.COLOR_TEXT_MAIN);
+        formCard.add(lblFormTitle, BorderLayout.NORTH);
+
+        JPanel formGrid = new JPanel(new GridLayout(3, 4, 12, 10));
+        formGrid.setOpaque(false);
+
+        // Row 1
+        txtCourseId = new JTextField();
+        txtSessionNo = new JTextField();
         cmbSessionType = new JComboBox<>(new String[]{"Theory", "Practical"});
-        txtDate = new JTextField(6);
-        txtDescription = new JTextField(8);
+        txtDate = new JTextField(java.time.LocalDate.now().toString());
 
-        txtImagePath = new JTextField(8);
+        // Row 2
+        txtDescription = new JTextField();
+        txtImagePath = new JTextField();
         txtImagePath.setEditable(false);
-        JButton btnBrowse = new JButton("Browse...");
-
+        JButton btnBrowse = UITheme.createSecondaryButton("Browse File...");
         btnBrowse.addActionListener(e -> {
             JFileChooser fileChooser = new JFileChooser();
             int result = fileChooser.showOpenDialog(this);
@@ -80,28 +125,45 @@ public class UndergraduateMedicalForm extends JPanel {
             }
         });
 
-        JButton btnSubmit = new JButton("Submit");
-        btnSubmit.setBackground(new Color(0, 102, 204));
-        btnSubmit.setForeground(Color.WHITE);
-
-        bottomPanel.add(new JLabel("Course:"));
-        bottomPanel.add(txtCourseId);
-        bottomPanel.add(new JLabel("Session:"));
-        bottomPanel.add(txtSessionNo);
-        bottomPanel.add(new JLabel("Type:"));
-        bottomPanel.add(cmbSessionType);
-        bottomPanel.add(new JLabel("Date:"));
-        bottomPanel.add(txtDate);
-        bottomPanel.add(new JLabel("Desc:"));
-        bottomPanel.add(txtDescription);
-        bottomPanel.add(new JLabel("Doc:"));
-        bottomPanel.add(txtImagePath);
-        bottomPanel.add(btnBrowse);
-        bottomPanel.add(btnSubmit);
-
-        add(bottomPanel, BorderLayout.SOUTH);
-
+        JButton btnSubmit = UITheme.createPrimaryButton("+ Submit Medical");
         btnSubmit.addActionListener(e -> submitNewMedical());
+
+        // Adding to Grid
+        formGrid.add(createFormField("Course ID (e.g. ICT2133):", txtCourseId));
+        formGrid.add(createFormField("Session No:", txtSessionNo));
+        formGrid.add(createFormField("Session Type:", cmbSessionType));
+        formGrid.add(createFormField("Medical Date (YYYY-MM-DD):", txtDate));
+
+        formGrid.add(createFormField("Reason / Description:", txtDescription));
+
+        JPanel docPanel = new JPanel(new BorderLayout(6, 0));
+        docPanel.setOpaque(false);
+        docPanel.add(txtImagePath, BorderLayout.CENTER);
+        docPanel.add(btnBrowse, BorderLayout.EAST);
+        formGrid.add(createFormField("Medical Document Attachment:", docPanel));
+
+        // Submit button panel
+        JPanel submitContainer = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 18));
+        submitContainer.setOpaque(false);
+        submitContainer.add(btnSubmit);
+        formGrid.add(new JLabel(""));
+        formGrid.add(submitContainer);
+
+        formCard.add(formGrid, BorderLayout.CENTER);
+        centerPanel.add(formCard, BorderLayout.SOUTH);
+
+        add(centerPanel, BorderLayout.CENTER);
+    }
+
+    private JPanel createFormField(String labelText, JComponent field) {
+        JPanel p = new JPanel(new BorderLayout(0, 4));
+        p.setOpaque(false);
+        JLabel lbl = new JLabel(labelText);
+        lbl.setFont(UITheme.FONT_BODY_BOLD);
+        lbl.setForeground(UITheme.COLOR_TEXT_MAIN);
+        p.add(lbl, BorderLayout.NORTH);
+        p.add(field, BorderLayout.CENTER);
+        return p;
     }
 
     private void submitNewMedical() {
@@ -113,7 +175,7 @@ public class UndergraduateMedicalForm extends JPanel {
         String imagePath = txtImagePath.getText().trim();
 
         if (courseId.isEmpty() || sessionNoStr.isEmpty() || date.isEmpty() || description.isEmpty() || imagePath.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please fill all fields and select document!", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Please fill all required fields and select the medical document!", "Missing Fields", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -123,27 +185,26 @@ public class UndergraduateMedicalForm extends JPanel {
             boolean isSuccess = medicalDAO.addMedical(studentId, courseId, sessionNo, type, date);
 
             if (isSuccess) {
-                JOptionPane.showMessageDialog(this, "Medical submitted successfully!");
+                JOptionPane.showMessageDialog(this, "Medical certificate submitted successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
                 loadMedicalData();
 
                 txtCourseId.setText("");
                 txtSessionNo.setText("");
-                txtDate.setText("");
                 txtDescription.setText("");
                 txtImagePath.setText("");
             } else {
-                JOptionPane.showMessageDialog(this, "Failed to submit medical.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Failed to submit medical certificate. Please verify details.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Session No must be a number!", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Session number must be a valid numeric digit!", "Input Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void loadMedicalData() {
+    public void loadMedicalData() {
         modelMedical.setRowCount(0);
-        java.util.List<model.Medical> list = medicalDAO.getMedicalsByStudentId(studentId);
+        List<Medical> list = medicalDAO.getMedicalsByStudentId(studentId);
 
-        for (model.Medical m : list) {
+        for (Medical m : list) {
             String sessionDisplay = (m.getSessionNo() == 0) ? "To be assigned" : "Session " + m.getSessionNo();
 
             Object[] row = {

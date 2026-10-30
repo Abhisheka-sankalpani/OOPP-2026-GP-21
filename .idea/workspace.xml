@@ -5,15 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cabfa251-f4e3-4e63-acf9-9289a1de6069" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/OOPP-2026-GP-21.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/OOPP-2026-GP-21.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/OOPP-2026-GP-21/dao/UserDAO.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/OOPP-2026-GP-21/dao/UserDAO.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/dao/TestCourseDAO.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/dao/TestDeleteCourse.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/dao/TestReadCourses.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/dao/TestUpdateCourse.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/dao/UserDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/dao/UserDAO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/Admin.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Admin.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/dao/NoticeDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/dao/NoticeDAO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/dao/TimetableDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/dao/TimetableDAO.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -40,61 +34,61 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.0" />
-      <entry key="MS500" value="1.0" />
-      <entry key="S2" value="1.0" />
-      <entry key="S5" value="1.0" />
-      <entry key="S10" value="1.000000000000001" />
-      <entry key="S30" value="1.0000214675865657" />
-      <entry key="S60" value="1.0097496141650844" />
-      <entry key="M2" value="1.355278323057458" />
-      <entry key="M5" value="6.628786571646269" />
-      <entry key="M10" value="17.486756288445257" />
-      <entry key="M15" value="25.340385196177976" />
-      <entry key="M30" value="40.81456177135592" />
-      <entry key="H1" value="69.37016995048778" />
-      <entry key="H2" value="123.75783475809422" />
-      <entry key="H4" value="194.33994362991808" />
-      <entry key="D1" value="383.68413970354436" />
-      <entry key="W1" value="470.50289067637783" />
+      <entry key="MS100" value="1.0000010221254507" />
+      <entry key="MS500" value="1.068267472372204" />
+      <entry key="S2" value="1.878680831211244" />
+      <entry key="S5" value="2.954142845842535" />
+      <entry key="S10" value="3.8076121191236263" />
+      <entry key="S30" value="5.530955838433021" />
+      <entry key="S60" value="8.307346246681252" />
+      <entry key="M2" value="14.163334343800017" />
+      <entry key="M5" value="25.698818347243567" />
+      <entry key="M10" value="33.72059252555932" />
+      <entry key="M15" value="37.38757135508267" />
+      <entry key="M30" value="43.75319662841725" />
+      <entry key="H1" value="59.9735731979356" />
+      <entry key="H2" value="104.63723814353328" />
+      <entry key="H4" value="180.56071859641875" />
+      <entry key="D1" value="407.64429767497444" />
+      <entry key="W1" value="513.3640686078551" />
     </decayedCancelled>
     <decayedSelected>
-      <entry key="MS100" value="0.0" />
-      <entry key="MS500" value="6.972442811830326E-255" />
-      <entry key="S2" value="2.8896566327831453E-64" />
-      <entry key="S5" value="3.840064296538025E-26" />
-      <entry key="S10" value="1.9596081997527017E-13" />
-      <entry key="S30" value="5.8083986618116096E-5" />
-      <entry key="S60" value="0.007621586594463993" />
-      <entry key="M2" value="0.08784905991664196" />
-      <entry key="M5" value="0.42669867239815085" />
-      <entry key="M10" value="0.8368718516029638" />
-      <entry key="M15" value="1.091150771393198" />
-      <entry key="M30" value="1.5649777117493122" />
-      <entry key="H1" value="2.9967205490319775" />
-      <entry key="H2" value="6.729676416204097" />
-      <entry key="H4" value="12.576715808600591" />
-      <entry key="D1" value="37.56587159323473" />
-      <entry key="W1" value="52.61171495123382" />
+      <entry key="MS100" value="1.7072002832342143E-172" />
+      <entry key="MS500" value="4.430542376984471E-35" />
+      <entry key="S2" value="2.579967431930685E-9" />
+      <entry key="S5" value="3.6698278273173155E-4" />
+      <entry key="S10" value="0.01915682438057833" />
+      <entry key="S30" value="0.2708672653147713" />
+      <entry key="S60" value="0.5887764623227927" />
+      <entry key="M2" value="1.116740242111726" />
+      <entry key="M5" value="2.1484639474289913" />
+      <entry key="M10" value="2.8718636495731698" />
+      <entry key="M15" value="3.195233679880542" />
+      <entry key="M30" value="3.6465324651878372" />
+      <entry key="H1" value="4.457741736971106" />
+      <entry key="H2" value="7.099155551064615" />
+      <entry key="H4" value="12.633751446765126" />
+      <entry key="D1" value="39.31272293677881" />
+      <entry key="W1" value="56.14954406282337" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="2.3189901051814182E-7" />
-      <entry key="MS500" value="0.0471042159236994" />
-      <entry key="S2" value="0.46587021465238654" />
-      <entry key="S5" value="0.7367259677347991" />
-      <entry key="S10" value="0.8583274245502515" />
-      <entry key="S30" value="0.9504268509757323" />
-      <entry key="S60" value="0.9918983188984959" />
-      <entry key="M2" value="1.426415757986706" />
-      <entry key="M5" value="7.026170335355129" />
-      <entry key="M10" value="18.285685818325877" />
-      <entry key="M15" value="26.394804423716554" />
-      <entry key="M30" value="42.34908318738239" />
-      <entry key="H1" value="72.33932773611009" />
-      <entry key="H2" value="130.46143865107373" />
-      <entry key="H4" value="206.8954588812138" />
-      <entry key="D1" value="421.2424714538262" />
-      <entry key="W1" value="523.1132355908464" />
+      <entry key="MS100" value="0.5212334168915647" />
+      <entry key="MS500" value="0.9377392899031826" />
+      <entry key="S2" value="1.7625189775760672" />
+      <entry key="S5" value="2.726724069248351" />
+      <entry key="S10" value="3.5830634941506525" />
+      <entry key="S30" value="5.604335299771519" />
+      <entry key="S60" value="8.693010186918398" />
+      <entry key="M2" value="15.067672901264816" />
+      <entry key="M5" value="27.677564726014023" />
+      <entry key="M10" value="36.478905339490844" />
+      <entry key="M15" value="40.49859076639214" />
+      <entry key="M30" value="47.35116552008092" />
+      <entry key="H1" value="64.40014109208636" />
+      <entry key="H2" value="111.71112350411371" />
+      <entry key="H4" value="193.1733125586385" />
+      <entry key="D1" value="446.9488329862681" />
+      <entry key="W1" value="569.5120974263118" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -114,9 +108,12 @@
     "Application.TestDBConnection.executor": "Run",
     "Application.TestDeleteCourse.executor": "Run",
     "Application.TestDeleteUser.executor": "Run",
+    "Application.TestLogin.executor": "Run",
+    "Application.TestNoticeDAO.executor": "Run",
     "Application.TestPasswordService.executor": "Run",
     "Application.TestReadCourses.executor": "Run",
     "Application.TestReadUser.executor": "Run",
+    "Application.TestTimetableDAO.executor": "Run",
     "Application.TestUpdateCourse.executor": "Run",
     "Application.TestUpdateUser.executor": "Run",
     "Application.TestUserDAO.executor": "Run",

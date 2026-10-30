@@ -78,7 +78,7 @@ public class UndergraduateDashboard extends JFrame {
 
     private JPanel createHeaderBar() {
         JPanel bar = new JPanel(new BorderLayout(10, 10));
-        bar.setBackground(new Color(11, 102, 77)); // Dark Green Background
+        bar.setBackground(new Color(17, 56, 147)); 
         bar.setBorder(new EmptyBorder(10, 20, 10, 20));
 
         String displayName = (currentStudent != null) ? currentStudent.getFullName() : "Unknown User";
@@ -263,62 +263,53 @@ public class UndergraduateDashboard extends JFrame {
     }
 
     private JPanel createSummaryCard(String title, String value) {
-        JPanel card = new JPanel(new GridLayout(2, 1));
-        card.setBackground(new Color(240, 248, 255));
-        card.setBorder(BorderFactory.createLineBorder(new Color(200, 220, 240)));
+        JPanel card = new JPanel(new GridLayout(2, 1, 2, 2));
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(220, 224, 230), 1, true),
+                BorderFactory.createEmptyBorder(15, 15, 15, 15)
+        ));
 
         JLabel lblTitle = new JLabel(title, SwingConstants.CENTER);
-        lblTitle.setFont(new Font("Arial", Font.BOLD, 14));
+        lblTitle.setFont(new Font("Arial", Font.BOLD, 20));
+        lblTitle.setForeground(new Color(100, 110, 120));
 
         JLabel lblValue = new JLabel(value, SwingConstants.CENTER);
-        lblValue.setFont(new Font("Arial", Font.BOLD, 18));
-        lblValue.setForeground(new Color(0, 102, 204));
+        lblValue.setFont(new Font("Arial", Font.BOLD, 28));
+        lblValue.setForeground(new Color(17, 56, 147));
 
         card.add(lblTitle);
         card.add(lblValue);
         return card;
     }
-
     private JPanel createStudentInfoCard(Undergraduate student) {
         JPanel card = new JPanel(new BorderLayout(5, 5));
-        card.setBackground(new Color(240, 248, 255));
-        card.setBorder(BorderFactory.createLineBorder(new Color(200, 220, 240)));
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(220, 224, 230), 1, true),
+                BorderFactory.createEmptyBorder(12, 15, 12, 15)
+        ));
 
         JLabel lblTitle = new JLabel("Student Info", SwingConstants.CENTER);
-        lblTitle.setFont(new Font("Arial", Font.BOLD, 14));
+        lblTitle.setFont(new Font("Arial", Font.BOLD, 20));
+        lblTitle.setForeground(new Color(100, 110, 120));
         card.add(lblTitle, BorderLayout.NORTH);
 
-        JPanel infoPanel = new JPanel(new GridLayout(3, 1));
-        infoPanel.setBackground(new Color(240, 248, 255));
-
+        String infoHtml;
         if (student != null) {
-            JLabel lblReg = new JLabel("Reg No: " + student.getRegNo(), SwingConstants.CENTER);
-            JLabel lblBatch = new JLabel("Batch: " + student.getBatch(), SwingConstants.CENTER);
-            JLabel lblDept = new JLabel("Dept: " + student.getDepartment(), SwingConstants.CENTER);
-
-            Font smallFont = new Font("Arial", Font.BOLD, 12);
-            lblReg.setFont(smallFont);
-            lblBatch.setFont(smallFont);
-            lblDept.setFont(smallFont);
-
-            Color blueColor = new Color(0, 102, 204);
-            lblReg.setForeground(blueColor);
-            lblBatch.setForeground(blueColor);
-            lblDept.setForeground(blueColor);
-
-            infoPanel.add(lblReg);
-            infoPanel.add(lblBatch);
-            infoPanel.add(lblDept);
+            infoHtml = "<html><div style='text-align: center; color: #113893FF; font-family: Arial; font-size: 13px; font-weight: bold; line-height: 1.6;'>" +
+                    "Reg No: " + student.getRegNo() + "<br/>" +
+                    "Batch: " + student.getBatch() + "<br/>" +
+                    "Dept: " + student.getDepartment() +
+                    "</div></html>";
         } else {
-            JLabel lblNA = new JLabel("N/A", SwingConstants.CENTER);
-            lblNA.setFont(new Font("Arial", Font.BOLD, 18));
-            infoPanel.add(lblNA);
+            infoHtml = "<html><div style='text-align: center; color: #28323C; font-family: Arial; font-size: 14px;'>N/A</div></html>";
         }
 
-        card.add(infoPanel, BorderLayout.CENTER);
+        JLabel lblInfo = new JLabel(infoHtml, SwingConstants.CENTER);
+        card.add(lblInfo, BorderLayout.CENTER);
         return card;
     }
-
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             new UndergraduateDashboard("tg1001").setVisible(true);

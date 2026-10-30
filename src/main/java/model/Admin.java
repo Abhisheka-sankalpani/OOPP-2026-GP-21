@@ -3,6 +3,12 @@ package model;
 
 
 public class Admin extends User {
+
+    public Admin() {
+        super();
+        setRole("ADMIN");
+    }
+
     public Admin(String userId, String passwordHash,
                  String firstName, String lastName,
                  String email, String contactNo,

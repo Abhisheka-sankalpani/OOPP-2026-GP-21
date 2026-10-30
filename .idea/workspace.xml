@@ -5,8 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cabfa251-f4e3-4e63-acf9-9289a1de6069" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/OOPP-2026-GP-21.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/OOPP-2026-GP-21.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/dao/CourseDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/dao/CourseDAO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/OOPP-2026-GP-21/dao/UserDAO.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/OOPP-2026-GP-21/dao/UserDAO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/dao/TestCourseDAO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/dao/TestDeleteCourse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/dao/TestReadCourses.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/dao/TestUpdateCourse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/dao/UserDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/dao/UserDAO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/Admin.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Admin.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -34,60 +41,60 @@
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
       <entry key="MS100" value="1.0" />
-      <entry key="MS500" value="1.0000000000049545" />
-      <entry key="S2" value="1.0018244194586043" />
-      <entry key="S5" value="1.1179748796504874" />
-      <entry key="S10" value="1.5726089126764375" />
-      <entry key="S30" value="3.6809513693476625" />
-      <entry key="S60" value="6.231921876824863" />
-      <entry key="M2" value="9.343717772517063" />
-      <entry key="M5" value="12.934945781030363" />
-      <entry key="M10" value="15.02080607437587" />
-      <entry key="M15" value="16.086817196635295" />
-      <entry key="M30" value="17.606665003003414" />
-      <entry key="H1" value="18.693123043223906" />
-      <entry key="H2" value="21.40870847810056" />
-      <entry key="H4" value="36.78320554151215" />
-      <entry key="D1" value="136.61020926557163" />
-      <entry key="W1" value="189.67287761268912" />
+      <entry key="MS500" value="1.0" />
+      <entry key="S2" value="1.0" />
+      <entry key="S5" value="1.0" />
+      <entry key="S10" value="1.000000000000001" />
+      <entry key="S30" value="1.0000214675865657" />
+      <entry key="S60" value="1.0097496141650844" />
+      <entry key="M2" value="1.355278323057458" />
+      <entry key="M5" value="6.628786571646269" />
+      <entry key="M10" value="17.486756288445257" />
+      <entry key="M15" value="25.340385196177976" />
+      <entry key="M30" value="40.81456177135592" />
+      <entry key="H1" value="69.37016995048778" />
+      <entry key="H2" value="123.75783475809422" />
+      <entry key="H4" value="194.33994362991808" />
+      <entry key="D1" value="383.68413970354436" />
+      <entry key="W1" value="470.50289067637783" />
     </decayedCancelled>
     <decayedSelected>
-      <entry key="MS100" value="4.31456237046141E-150" />
-      <entry key="MS500" value="1.3396376671836337E-30" />
-      <entry key="S2" value="3.402129503534577E-8" />
-      <entry key="S5" value="0.001039638739952695" />
-      <entry key="S10" value="0.03525419574457912" />
-      <entry key="S30" value="0.484986522833638" />
-      <entry key="S60" value="1.089956045909723" />
-      <entry key="M2" value="1.7481457858860427" />
-      <entry key="M5" value="2.395007912040223" />
-      <entry key="M10" value="2.6761690685583783" />
-      <entry key="M15" value="2.7790189405018717" />
-      <entry key="M30" value="2.886868999767425" />
-      <entry key="H1" value="2.946526285764102" />
-      <entry key="H2" value="3.2385043951924546" />
-      <entry key="H4" value="5.540789490057053" />
-      <entry key="D1" value="24.364365563460794" />
-      <entry key="W1" value="35.54972221191936" />
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="6.972442811830326E-255" />
+      <entry key="S2" value="2.8896566327831453E-64" />
+      <entry key="S5" value="3.840064296538025E-26" />
+      <entry key="S10" value="1.9596081997527017E-13" />
+      <entry key="S30" value="5.8083986618116096E-5" />
+      <entry key="S60" value="0.007621586594463993" />
+      <entry key="M2" value="0.08784905991664196" />
+      <entry key="M5" value="0.42669867239815085" />
+      <entry key="M10" value="0.8368718516029638" />
+      <entry key="M15" value="1.091150771393198" />
+      <entry key="M30" value="1.5649777117493122" />
+      <entry key="H1" value="2.9967205490319775" />
+      <entry key="H2" value="6.729676416204097" />
+      <entry key="H4" value="12.576715808600591" />
+      <entry key="D1" value="37.56587159323473" />
+      <entry key="W1" value="52.61171495123382" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="6.273545217074868E-10" />
-      <entry key="MS500" value="0.014437852694500921" />
-      <entry key="S2" value="0.3472576501683532" />
-      <entry key="S5" value="0.7365399588736729" />
-      <entry key="S10" value="1.3230536761896647" />
-      <entry key="S30" value="3.958414636562185" />
-      <entry key="S60" value="7.145117111119411" />
-      <entry key="M2" value="10.95183140272218" />
-      <entry key="M5" value="15.248444034736899" />
-      <entry key="M10" value="17.64907510890864" />
-      <entry key="M15" value="18.83162474332752" />
-      <entry key="M30" value="20.474886177267983" />
-      <entry key="H1" value="21.629796605408036" />
-      <entry key="H2" value="24.64164567644598" />
-      <entry key="H4" value="42.319320771681475" />
-      <entry key="D1" value="160.97147650767394" />
-      <entry key="W1" value="225.22196302995022" />
+      <entry key="MS100" value="2.3189901051814182E-7" />
+      <entry key="MS500" value="0.0471042159236994" />
+      <entry key="S2" value="0.46587021465238654" />
+      <entry key="S5" value="0.7367259677347991" />
+      <entry key="S10" value="0.8583274245502515" />
+      <entry key="S30" value="0.9504268509757323" />
+      <entry key="S60" value="0.9918983188984959" />
+      <entry key="M2" value="1.426415757986706" />
+      <entry key="M5" value="7.026170335355129" />
+      <entry key="M10" value="18.285685818325877" />
+      <entry key="M15" value="26.394804423716554" />
+      <entry key="M30" value="42.34908318738239" />
+      <entry key="H1" value="72.33932773611009" />
+      <entry key="H2" value="130.46143865107373" />
+      <entry key="H4" value="206.8954588812138" />
+      <entry key="D1" value="421.2424714538262" />
+      <entry key="W1" value="523.1132355908464" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -102,11 +109,17 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "Application.TestAdmin.executor": "Run",
+    "Application.TestAllUsers.executor": "Run",
     "Application.TestCourseDAO.executor": "Run",
     "Application.TestDBConnection.executor": "Run",
     "Application.TestDeleteCourse.executor": "Run",
+    "Application.TestDeleteUser.executor": "Run",
+    "Application.TestPasswordService.executor": "Run",
     "Application.TestReadCourses.executor": "Run",
+    "Application.TestReadUser.executor": "Run",
     "Application.TestUpdateCourse.executor": "Run",
+    "Application.TestUpdateUser.executor": "Run",
+    "Application.TestUserDAO.executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
@@ -122,7 +135,7 @@
     "node.js.selected.package.jshint": "",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "SDKs",
+    "project.structure.last.edited": "Modules",
     "project.structure.proportion": "0.15",
     "project.structure.side.proportion": "0.2"
   },

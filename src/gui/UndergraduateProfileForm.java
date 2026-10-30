@@ -90,13 +90,17 @@ public class UndergraduateProfileForm extends JPanel {
 
             // Email Field
             centerPanel.add(new JLabel("Email:"));
-            txtEmail = new JTextField(currentStudent.getEmail());
-            centerPanel.add(txtEmail);
+            JPanel emailPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+            txtEmail = new JTextField(currentStudent.getEmail(), 20);
+            emailPanel.add(txtEmail);
+            centerPanel.add(emailPanel);
 
             // Contact Number Field
             centerPanel.add(new JLabel("Contact Number:"));
-            txtContact = new JTextField(currentStudent.getContactNo());
-            centerPanel.add(txtContact);
+            JPanel contactPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+            txtContact = new JTextField(currentStudent.getContactNo(), 20);
+            contactPanel.add(txtContact);
+            centerPanel.add(contactPanel);
 
             centerPanel.add(new JLabel(""));
             JButton btnUpdate = new JButton("Update");
@@ -112,7 +116,9 @@ public class UndergraduateProfileForm extends JPanel {
                     JOptionPane.showMessageDialog(UndergraduateProfileForm.this, "Update Failed!", "Error", JOptionPane.ERROR_MESSAGE);
                 }
             });
-            centerPanel.add(btnUpdate);
+            JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+            btnPanel.add(btnUpdate);
+            centerPanel.add(btnPanel);
 
         } else {
             centerPanel.add(new JLabel("Student data not found in Database!"));

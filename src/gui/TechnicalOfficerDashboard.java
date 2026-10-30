@@ -276,8 +276,7 @@ public class TechnicalOfficerDashboard extends JFrame {
         }
         colourAttendanceRows(attendanceTable, model);
     }
-
-    /** Colours PRESENT rows green, ABSENT rows red. */
+    
     private void colourAttendanceRows(JTable table, DefaultTableModel model) {
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override

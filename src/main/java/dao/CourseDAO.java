@@ -96,6 +96,17 @@ public class CourseDAO {
             }
 
     }
+ public boolean deleteCourse(Course course) throws SQLException {
+        String sql = "DELETE FROM course WHERE course_id = ?";
+
+        try (Connection con = DBConnection.getConnection();
+        PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, course.getCourseId());
+            int rows = ps.executeUpdate();
+
+            return rows > 0;
+        }
+ }
 
     }
 

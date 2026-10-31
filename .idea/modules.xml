@@ -2,7 +2,11 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+<<<<<<< HEAD
       <module fileurl="file://$PROJECT_DIR$/.idea/OOPP-2026-GP-21.iml" filepath="$PROJECT_DIR$/.idea/OOPP-2026-GP-21.iml" />
+=======
+      <module fileurl="file://$PROJECT_DIR$/Member2_TechnicalOfficer.iml" filepath="$PROJECT_DIR$/Member2_TechnicalOfficer.iml" />
+>>>>>>> Tg-/2023/1752
     </modules>
   </component>
 </project>

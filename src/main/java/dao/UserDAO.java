@@ -551,5 +551,53 @@ public class UserDAO {
             }
         }
     }
+    // UPDATE - User Profile
+    public boolean updateProfile(
+            String userId,
+            String firstName,
+            String lastName,
+            String email,
+            String contactNo,
+            String profilePic) throws SQLException {
 
+        String sql = "UPDATE users SET " +
+                "first_name = ?, " +
+                "last_name = ?, " +
+                "email = ?, " +
+                "contact_no = ?, " +
+                "profile_pic = ? " +
+                "WHERE user_id = ?";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, firstName);
+            ps.setString(2, lastName);
+            ps.setString(3, email);
+            ps.setString(4, contactNo);
+            ps.setString(5, profilePic);
+            ps.setString(6, userId);
+
+            return ps.executeUpdate() > 0;
+        }
+    }
+    // UPDATE - Password using optimistic concurrency check
+    public boolean updatePassword(
+            String userId,
+            String oldHash,
+            String newHash) throws SQLException {
+
+        String sql = "UPDATE users SET password = ? " +
+                "WHERE user_id = ? AND password = ?";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, newHash);
+            ps.setString(2, userId);
+            ps.setString(3, oldHash);
+
+            return ps.executeUpdate() == 1;
+        }
+    }
 }

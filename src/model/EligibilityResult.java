@@ -71,4 +71,16 @@ public class EligibilityResult {
     public void setFinalEligible(boolean finalEligible) {
         this.finalEligible = finalEligible;
     }
+    // Convert boolean values into Eligibility or Not Eligibility
+    public String getCaStatus() {
+        return caEligible ? "Eligible" : "Not Eligible";
+    }
+
+    public String getAttendanceStatus() {
+        return attendanceEligible ? "Eligible" : "Not Eligible";
+    }
+
+    public String getFinalStatus() {
+        return finalEligible ? "Eligible" : "Not Eligible";
+    }
 }

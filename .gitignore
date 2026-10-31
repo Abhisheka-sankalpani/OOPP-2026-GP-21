@@ -1,6 +1,9 @@
 .idea/
+
+out/
+
 *.iml
 out/
 bin/
-practicals/
-db.properties
+
+materials/

@@ -7,6 +7,7 @@ public class Attendance {
     private int theoryTotal;
     private int practicalAttended;
     private int practicalTotal;
+    private double overallPercentage;
 
     // Default constructor
     public Attendance() {
@@ -23,6 +24,7 @@ public class Attendance {
         this.theoryTotal = theoryTotal;
         this.practicalAttended = practicalAttended;
         this.practicalTotal = practicalTotal;
+        this.overallPercentage = overallPercentage;
     }
 
     // Getters and Setters
@@ -72,5 +74,21 @@ public class Attendance {
 
     public void setPracticalTotal(int practicalTotal) {
         this.practicalTotal = practicalTotal;
+    }
+
+    public double getOverallPercentage() {
+        return overallPercentage;
+    }
+
+    public void setOverallPercentage(double overallPercentage) {
+        this.overallPercentage = overallPercentage;
+    }
+
+    public String getTheoryRatio() {
+        return theoryAttended + " / " + theoryTotal;
+    }
+
+    public String getPracticalRatio() {
+        return practicalAttended + " / " + practicalTotal;
     }
 }

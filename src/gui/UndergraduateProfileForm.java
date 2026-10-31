@@ -105,6 +105,11 @@ public class UndergraduateProfileForm extends JPanel {
 
                 boolean isSuccess = undergraduateDAO.updateContactDetails(studentId, email, contactNo, profilePicPath);
                 if (isSuccess) {
+                    currentStudent = undergraduateDAO.getStudentById(studentId);
+                    if (currentStudent != null) {
+                        profilePicPath = currentStudent.getProfilePic();
+                        updateProfileImage(profilePicPath);
+                    }
                     JOptionPane.showMessageDialog(this, "Profile updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
                     if (onProfileUpdated != null) {
                         onProfileUpdated.run();

@@ -214,6 +214,7 @@ public class UndergraduateDashboard extends JFrame {
 
     public void updateHeaderAvatar() {
         if (lblHeaderAvatar == null) return;
+
         currentStudent = undergraduateDAO.getStudentById(studentId);
 
         if (currentStudent != null && currentStudent.getProfilePic() != null && !currentStudent.getProfilePic().trim().isEmpty()) {
@@ -227,11 +228,11 @@ public class UndergraduateDashboard extends JFrame {
                 g2.drawImage(icon.getImage(), 0, 0, 32, 32, null);
                 g2.dispose();
                 lblHeaderAvatar.setIcon(new ImageIcon(rounded));
+                lblHeaderAvatar.repaint();
                 return;
             }
         }
-
-        // Default icon when no image uploaded
+        
         java.awt.image.BufferedImage defImg = new java.awt.image.BufferedImage(28, 28, java.awt.image.BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2 = defImg.createGraphics();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -240,6 +241,7 @@ public class UndergraduateDashboard extends JFrame {
         g2.fillArc(4, 13, 20, 14, 0, 180);
         g2.dispose();
         lblHeaderAvatar.setIcon(new ImageIcon(defImg));
+        lblHeaderAvatar.repaint();
     }
 
     // LEFT NAVIGATION SIDEBAR

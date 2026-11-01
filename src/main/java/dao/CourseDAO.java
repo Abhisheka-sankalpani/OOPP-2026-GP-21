@@ -285,4 +285,35 @@ public class CourseDAO {
             );
         }
     }
+
+    // STUDENT MODULE: Return only the courses that this student is enrolled in.
+    // Keep this method free of checked exceptions for the existing Student GUI.
+    public List<Course> getCoursesByStudent(String studentId) {
+        List<Course> courses = new ArrayList<>();
+        if (studentId == null || studentId.isBlank()) {
+            return courses;
+        }
+
+        String sql = "SELECT c.course_id, c.course_name, c.credit, c.type, "
+                + "c.theory_credits, c.practical_credits, c.has_theory, c.has_practical "
+                + "FROM course c "
+                + "JOIN student_course sc ON sc.course_id = c.course_id "
+                + "WHERE sc.student_id = ? ORDER BY c.course_id";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, studentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    courses.add(mapResultSetToCourse(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException(
+                    "Unable to load courses for student " + studentId, e);
+        }
+        // No enrollments means no courses, NOT every course in the system.
+        return courses;
+    }
+
 }

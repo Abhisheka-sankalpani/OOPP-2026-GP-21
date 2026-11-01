@@ -1,6 +1,5 @@
 package gui;
 
-import dao.*;
 import exception.InvalidSessionException;
 import exception.MedicalSubmissionException;
 import model.*;
@@ -12,6 +11,11 @@ import java.awt.*;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.util.List;
+
+import dao.TechnicalOfficerDAO;
+import dao.AttendanceDAO;
+import dao.MedicalDAO;
+import dao.AttendanceSummaryDAO;
 
 /**
  * Technical Officer Dashboard — Member 2 Implementation.

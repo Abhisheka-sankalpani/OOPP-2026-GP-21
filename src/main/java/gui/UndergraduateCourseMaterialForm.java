@@ -1,6 +1,6 @@
 package gui;
 
-import dao.CourseMaterialDAO;
+import dao.UndergraduateCourseMaterialDAO;
 import model.CourseMaterial;
 
 import javax.swing.*;
@@ -15,7 +15,7 @@ import java.util.List;
 public class UndergraduateCourseMaterialForm extends JPanel {
 
     private String studentId;
-    private CourseMaterialDAO courseMaterialDAO;
+    private UndergraduateCourseMaterialDAO courseMaterialDAO;
 
     private JTable tableMaterial;
     private DefaultTableModel modelMaterial;
@@ -24,7 +24,7 @@ public class UndergraduateCourseMaterialForm extends JPanel {
 
     public UndergraduateCourseMaterialForm(String studentId) {
         this.studentId = studentId;
-        this.courseMaterialDAO = new CourseMaterialDAO();
+        this.courseMaterialDAO = new UndergraduateCourseMaterialDAO();
 
         setLayout(new BorderLayout(0, 16));
         setBackground(UITheme.COLOR_BG);

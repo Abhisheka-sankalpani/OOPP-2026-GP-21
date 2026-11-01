@@ -65,9 +65,8 @@ public class Course {
     }
 
     public String getType() {
-        return type;
+        return (type != null && !type.isEmpty()) ? type : "Core";
     }
-
     public void setType(String type) {
         this.type = type;
     }

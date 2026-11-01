@@ -315,4 +315,25 @@ public class NoticeDAO {
 
         return role;
     }
+
+    // Student module: notices addressed to STUDENT or ALL.
+    // No checked exception is exposed to preserve UndergraduateNoticeForm compatibility.
+    public List<Notice> getStudentNotices() {
+        List<Notice> notices = new ArrayList<>();
+        String sql = "SELECT notice_id, title, content, posted_date, target_role "
+                + "FROM notice "
+                + "WHERE target_role IN ('STUDENT', 'ALL') "
+                + "ORDER BY posted_date DESC, notice_id DESC";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                notices.add(mapResultSetToNotice(rs));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching student notices: " + e.getMessage());
+        }
+        return notices;
+    }
 }

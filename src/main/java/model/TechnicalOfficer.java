@@ -32,6 +32,19 @@ public class TechnicalOfficer extends User {
                 email, null, null, department);
     }
 
+    // Constructor for Technical Officer DAO
+    public TechnicalOfficer(String userId,
+                            String firstName,
+                            String lastName,
+                            String email,
+                            String contactNo,
+                            String profilePic,
+                            String department) {
+
+        this(userId, null, firstName, lastName,
+                email, contactNo, profilePic, department);
+    }
+
     // Getter
     public String getDepartment() {
         return department;

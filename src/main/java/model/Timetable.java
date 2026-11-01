@@ -2,9 +2,15 @@ package model;
 
 import java.sql.Time;
 
+/**
+ * Shared timetable model for the Admin and Undergraduate modules.
+ *
+ * Admin data access uses java.sql.Time. The Undergraduate module's
+ * original constructor supplies time values as Strings, so that
+ * constructor converts those values to the same internal representation.
+ */
 public class Timetable {
 
-    // Attributes
     private int timetableId;
     private String courseId;
     private String courseName;
@@ -15,7 +21,7 @@ public class Timetable {
     private Time endTime;
     private String venueId;
 
-    // Default Constructor
+    // Admin default constructor and defaults.
     public Timetable() {
         this.department = "ICT";
         this.sessionType = "THEORY";
@@ -24,12 +30,10 @@ public class Timetable {
         this.endTime = Time.valueOf("11:00:00");
     }
 
-    // Parameterized Constructor
-    public Timetable(int timetableId, String courseId,
-                     String department, String sessionType,
-                     String dayOfWeek, Time startTime,
+    // Admin constructor, with timetable ID and SQL Time fields.
+    public Timetable(int timetableId, String courseId, String department,
+                     String sessionType, String dayOfWeek, Time startTime,
                      Time endTime, String venueId) {
-
         this.timetableId = timetableId;
         this.courseId = courseId;
         this.department = department;
@@ -40,17 +44,34 @@ public class Timetable {
         this.venueId = venueId;
     }
 
-    // Constructor without Timetable ID
-    public Timetable(String courseId, String department,
-                     String sessionType, String dayOfWeek,
-                     Time startTime, Time endTime,
+    // Admin constructor for a new entry before the database assigns an ID.
+    public Timetable(String courseId, String department, String sessionType,
+                     String dayOfWeek, Time startTime, Time endTime,
                      String venueId) {
-
-        this(0, courseId, department, sessionType,
-                dayOfWeek, startTime, endTime, venueId);
+        this(0, courseId, department, sessionType, dayOfWeek,
+                startTime, endTime, venueId);
     }
 
-    // Getters and Setters
+    // Student constructor: includes course name and time values as Strings.
+    public Timetable(int timetableId, String courseId, String courseName,
+                     String department, String sessionType, String dayOfWeek,
+                     String startTime, String endTime, String venueId) {
+        this(timetableId, courseId, department, sessionType, dayOfWeek,
+                parseTime(startTime), parseTime(endTime), venueId);
+        this.courseName = courseName;
+    }
+
+    // Convert Student-side SQL time strings to Time used by the Admin DAO.
+    private static Time parseTime(String text) {
+        if (text == null || text.isBlank()) {
+            return null;
+        }
+        String value = text.trim();
+        if (value.matches("\\d{1,2}:\\d{2}")) {
+            value += ":00";
+        }
+        return Time.valueOf(value);
+    }
 
     public int getTimetableId() {
         return timetableId;
@@ -100,6 +121,7 @@ public class Timetable {
         this.dayOfWeek = dayOfWeek;
     }
 
+    // Keep SQL Time return types: the Admin DAO uses PreparedStatement.setTime().
     public Time getStartTime() {
         return startTime;
     }
@@ -124,42 +146,32 @@ public class Timetable {
         this.venueId = venueId;
     }
 
-    // Validate Time
-    public boolean isTimeWindowValid() {
-
-        if (startTime == null || endTime == null) {
-            return false;
-        }
-
-        return endTime.after(startTime);
+    // Student timetable display method.
+    public String getTimeSlot() {
+        return String.valueOf(startTime) + " - " + String.valueOf(endTime);
     }
 
-    // Check Time Overlap
-    public boolean overlapsWith(Timetable other) {
+    // Admin-side validation and overlap detection.
+    public boolean isTimeWindowValid() {
+        return startTime != null && endTime != null && endTime.after(startTime);
+    }
 
-        if (other == null ||
-                dayOfWeek == null ||
-                other.dayOfWeek == null) {
+    public boolean overlapsWith(Timetable other) {
+        if (other == null || dayOfWeek == null || other.dayOfWeek == null) {
             return false;
         }
-
         if (!dayOfWeek.equalsIgnoreCase(other.dayOfWeek)) {
             return false;
         }
-
         if (!isTimeWindowValid() || !other.isTimeWindowValid()) {
             return false;
         }
-
-        return startTime.before(other.endTime)
-                && other.startTime.before(endTime);
+        return startTime.before(other.endTime) && other.startTime.before(endTime);
     }
 
-    // Display Timetable
     @Override
     public String toString() {
-        return courseId + " [" + dayOfWeek + " "
-                + startTime + " - " + endTime
-                + " @ " + venueId + "]";
+        return courseId + " [" + dayOfWeek + " " + startTime + " - "
+                + endTime + " @ " + venueId + "]";
     }
 }

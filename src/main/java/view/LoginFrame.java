@@ -1,6 +1,6 @@
 package view;
 
-import model.Admin;
+
 import model.User;
 import service.AuthService;
 
@@ -11,6 +11,16 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
+
+import gui.LecturerDashboard;
+import gui.TechnicalOfficerDashboard;
+import gui.UndergraduateDashboard;
+
+import model.Admin;
+import model.Lecturer;
+import model.Student;
+import model.TechnicalOfficer;
+
 
 public class LoginFrame extends JFrame {
 
@@ -550,73 +560,88 @@ public class LoginFrame extends JFrame {
     }
 
 
-    // =====================================
-    // OPEN DASHBOARD
-    // =====================================
-
     private void openDashboard(User user) {
 
         if (user == null || user.getRole() == null) {
 
             authService.logout();
-
             showError("Invalid user account.");
-
             return;
         }
 
+        JFrame dashboard;
 
-        // ADMIN LOGIN
-        if ("ADMIN".equals(user.getRole())) {
+        switch (user.getRole()) {
 
-            if (!(user instanceof Admin)) {
+            // ADMIN LOGIN
+            case "ADMIN":
+
+                if (!(user instanceof Admin)) {
+                    authService.logout();
+                    showError("Invalid administrator account.");
+                    return;
+                }
+
+                dashboard = new AdminDashboard((Admin) user);
+                break;
+
+
+            // LECTURER LOGIN
+            case "LECTURER":
+
+                if (!(user instanceof Lecturer)) {
+                    authService.logout();
+                    showError("Invalid lecturer account.");
+                    return;
+                }
+
+                dashboard = new LecturerDashboard((Lecturer) user);
+                break;
+
+
+            // TECHNICAL OFFICER LOGIN
+            case "TECHNICAL_OFFICER":
+
+                if (!(user instanceof TechnicalOfficer)) {
+                    authService.logout();
+                    showError("Invalid technical officer account.");
+                    return;
+                }
+
+                dashboard = new TechnicalOfficerDashboard(
+                        user.getUserId()
+                );
+                break;
+
+
+            // STUDENT LOGIN
+            case "STUDENT":
+
+                if (!(user instanceof Student)) {
+                    authService.logout();
+                    showError("Invalid student account.");
+                    return;
+                }
+
+                dashboard = new UndergraduateDashboard(
+                        user.getUserId()
+                );
+                break;
+
+
+            // UNKNOWN ROLE
+            default:
 
                 authService.logout();
-
-                showError(
-                        "Invalid administrator account."
-                );
-
+                showError("Unknown user role.");
                 return;
-            }
-
-            AdminDashboard dashboard =
-                    new AdminDashboard((Admin) user);
-
-            dashboard.setVisible(true);
-
-            dispose();
-
-        } else {
-
-            // OTHER USER ROLES
-            switch (user.getRole()) {
-
-                case "LECTURER":
-                case "TECHNICAL_OFFICER":
-                case "STUDENT":
-
-                    DashboardFrame dashboard =
-                            new DashboardFrame(
-                                    user,
-                                    authService
-                            );
-
-                    dashboard.setVisible(true);
-
-                    dispose();
-
-                    break;
-
-                default:
-
-                    authService.logout();
-
-                    showError(
-                            "Unknown user role."
-                    );
-            }
         }
+
+        // OPEN SELECTED DASHBOARD
+        dashboard.setVisible(true);
+
+        // CLOSE LOGIN WINDOW
+        dispose();
     }
 
 

@@ -106,7 +106,7 @@ $$\text{Combined \% (with Medical)} = \frac{(\text{Theory Attended} + \text{Appr
 2. Run `database/member2_attendance_data.sql` to insert test data.
 3. Update the password in `src/db/DBConnection.java`.
 4. Add `lib/mysql-connector-j-8.0.33.jar` to the classpath.
-5. Run `src/gui/TechnicalOfficerDashboard.java` — login with TO ID `to1`.
+5. Run `src/main/java/gui/TechnicalOfficerDashboard.java` — login with TO ID `to1`.
 
 ---
 

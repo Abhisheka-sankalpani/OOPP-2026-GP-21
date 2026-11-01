@@ -1,6 +1,6 @@
 package dao;
 
-import db.DBConnection;
+import database.DBConnection;
 import model.CourseMaterial;
 
 import java.sql.Connection;
@@ -10,8 +10,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-//CourseMaterialDAO handles fetching and managing course materials.
-public class CourseMaterialDAO {
+// Student-specific DAO for reading course materials.
+public class UndergraduateCourseMaterialDAO {
 
     public List<CourseMaterial> getMaterialsByCourse(String courseId) {
         List<CourseMaterial> list = new ArrayList<>();

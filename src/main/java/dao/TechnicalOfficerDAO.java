@@ -1,6 +1,6 @@
 package dao;
 
-import db.DBConnection;
+import database.DBConnection;
 import model.TechnicalOfficer;
 
 import java.sql.*;

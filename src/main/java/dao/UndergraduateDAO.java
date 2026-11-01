@@ -1,6 +1,6 @@
 package dao;
 
-import db.DBConnection;
+import database.DBConnection;
 import model.Undergraduate;
 
 import javax.swing.*;
@@ -49,7 +49,7 @@ public class UndergraduateDAO {
     public boolean updateContactDetails(String studentId, String email, String contactNo, String profilePic) {
         String sql = "UPDATE users SET email = ?, contact_no = ?, profile_pic = ? WHERE user_id = ?";
 
-        try (java.sql.Connection conn = db.DBConnection.getConnection();
+        try (java.sql.Connection conn = database.DBConnection.getConnection();
              java.sql.PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, email);
@@ -71,7 +71,7 @@ public class UndergraduateDAO {
         dao.AttendanceDAO attDao = new dao.AttendanceDAO();
         java.util.List<model.Attendance> attList = attDao.getAttendanceByStudentId(studentId);
 
-        try (java.sql.Connection conn = db.DBConnection.getConnection()) {
+        try (java.sql.Connection conn = database.DBConnection.getConnection()) {
 
             String sql = "SELECT COALESCE(SUM(m.score * (a.weightage / 100.0)), 0.0) AS ca_total " +
                     "FROM mark m JOIN assessment a ON m.assessment_id = a.assessment_id " +
@@ -122,7 +122,7 @@ public class UndergraduateDAO {
                 "JOIN course c ON r.course_id = c.course_id " +
                 "WHERE r.student_id = ?";
 
-        try (java.sql.Connection conn = db.DBConnection.getConnection();
+        try (java.sql.Connection conn = database.DBConnection.getConnection();
              java.sql.PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, studentId);

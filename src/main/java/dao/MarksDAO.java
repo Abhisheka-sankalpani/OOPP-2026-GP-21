@@ -1,7 +1,7 @@
 
 package dao;
 
-import db.DBConnection;
+import database.DBConnection;
 import model.Marks;
 
 import java.sql.Connection;

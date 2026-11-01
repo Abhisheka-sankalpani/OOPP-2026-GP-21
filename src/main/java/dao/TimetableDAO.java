@@ -134,6 +134,39 @@ public class TimetableDAO {
     }
 
 
+    // READ - Weekly timetable for the Student dashboard (2136).
+    // This method intentionally does not declare SQLException because
+    // UndergraduateTimetableForm calls it without a checked-exception handler.
+    public List<Timetable> getTimetableByDepartment(String department) {
+        List<Timetable> entries = new ArrayList<>();
+
+        String sql = BASE_SELECT +
+                "WHERE UPPER(t.department) = UPPER(?) " +
+                "ORDER BY FIELD(t.day_of_week, " +
+                "'MONDAY', 'TUESDAY', 'WEDNESDAY', " +
+                "'THURSDAY', 'FRIDAY'), t.start_time ASC";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, department == null ? "" : department.trim());
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    entries.add(mapResultSetToTimetable(rs));
+                }
+            }
+        } catch (SQLException e) {
+            // Preserve the Student module's existing no-throws method signature.
+            // Log SQL failures rather than silently hiding the cause.
+            System.err.println("Error fetching timetable for department "
+                    + department + ": " + e.getMessage());
+        }
+
+        return entries;
+    }
+
+
     // UPDATE - Update Existing Timetable Entry
     public boolean updateTimetableEntry(Timetable entry)
             throws SQLException {

@@ -1,7 +1,7 @@
 package dao;
 
 import exception.InvalidSessionException;
-import db.DBConnection;
+import database.DBConnection;
 import model.Attendance;
 
 import java.sql.Connection;

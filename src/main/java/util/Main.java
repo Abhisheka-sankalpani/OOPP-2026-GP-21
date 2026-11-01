@@ -1,6 +1,8 @@
+package util;
+
 import exception.InvalidMarkException;
 import model.*;
-import util.*;
+
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,7 +1,7 @@
 package dao;
 
 import exception.MedicalSubmissionException;
-import db.DBConnection;
+import database.DBConnection;
 import model.Medical;
 
 import java.sql.Connection;
@@ -95,7 +95,7 @@ public class MedicalDAO {
     }
     public boolean addMedical(String studentId, String courseId, int sessionNo, String type, String date) {
         String query = "INSERT INTO medical (student_id, course_id, session_no, session_type, medical_date, approval_status) VALUES (?, ?, ?, ?, ?, 'Pending')";
-        try (java.sql.Connection conn = db.DBConnection.getConnection();
+        try (java.sql.Connection conn = database.DBConnection.getConnection();
              java.sql.PreparedStatement stmt = conn.prepareStatement(query)) {
 
             stmt.setString(1, studentId);

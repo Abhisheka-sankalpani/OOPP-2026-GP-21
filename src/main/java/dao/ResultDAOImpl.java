@@ -1,6 +1,6 @@
 package dao;
 
-import db.DBConnection;
+import database.DBConnection;
 import exception.DatabaseException;
 import model.Result;
 import util.Grade;

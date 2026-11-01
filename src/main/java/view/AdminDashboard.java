@@ -239,10 +239,22 @@ public class AdminDashboard extends JFrame {
                 "USERS"
         );
 
-        contentPanel.add(
-                coursePanel,
-                "COURSES"
-        );
+        JTabbedPane courseTabs = new JTabbedPane();
+
+        EnrollmentManagementPanel enrollmentPanel =
+                new EnrollmentManagementPanel();
+
+        courseTabs.addTab("Manage Courses", coursePanel);
+
+        courseTabs.addTab("Student Enrollment", enrollmentPanel);
+
+        courseTabs.addChangeListener(e -> {
+            if (courseTabs.getSelectedIndex() == 1) {
+                enrollmentPanel.reload();
+            }
+        });
+
+        contentPanel.add(courseTabs, "COURSES");
 
         contentPanel.add(
                 noticePanel,

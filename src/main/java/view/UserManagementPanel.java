@@ -366,7 +366,7 @@ public class UserManagementPanel extends JPanel {
         searchField = UIStyle.createTextField(20);
 
         searchField.setToolTipText(
-                "Search User ID, Name, Email or Role"
+                "Search User ID, Name, Email, Department or Role"
         );
 
         searchField.addActionListener(
@@ -418,6 +418,7 @@ public class UserManagementPanel extends JPanel {
                 "Full Name",
                 "Email",
                 "Contact",
+                "Department",
                 "Role"
         };
 
@@ -433,6 +434,14 @@ public class UserManagementPanel extends JPanel {
         };
 
         userTable = new JTable(tableModel);
+
+        // Keep all six columns readable; a horizontal scrollbar is available.
+        userTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        int[] columnWidths = {110, 170, 200, 120, 130, 165};
+        for (int col = 0; col < columnWidths.length; col++) {
+            userTable.getColumnModel().getColumn(col)
+                    .setPreferredWidth(columnWidths[col]);
+        }
 
         userTable.setFont(UIStyle.FONT_BODY);
 
@@ -608,6 +617,7 @@ public class UserManagementPanel extends JPanel {
                     user.getUserId() + " " +
                             user.getFullname() + " " +
                             user.getEmail() + " " +
+                            getDepartmentForTable(user) + " " +
                             user.getRole()
             ).toLowerCase(Locale.ROOT);
 
@@ -618,10 +628,26 @@ public class UserManagementPanel extends JPanel {
                         user.getFullname(),
                         user.getEmail(),
                         user.getContactNo(),
+                        getDepartmentForTable(user),
                         user.getRole()
                 });
             }
         }
+    }
+
+    // Role-specific department without changing the shared User model.
+    private String getDepartmentForTable(User user) {
+        String department = null;
+
+        if (user instanceof Lecturer) {
+            department = ((Lecturer) user).getDepartment();
+        } else if (user instanceof TechnicalOfficer) {
+            department = ((TechnicalOfficer) user).getDepartment();
+        } else if (user instanceof Student) {
+            department = ((Student) user).getDepartment();
+        }
+
+        return (department == null || department.isBlank()) ? "-" : department;
     }
 
     // ===================================

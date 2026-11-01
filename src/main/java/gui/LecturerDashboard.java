@@ -10,6 +10,9 @@ import dao.NoticeBoardDAO;
 import dao.NoticeBoardDAOImpl;
 import dao.ResultDAO;
 import dao.ResultDAOImpl;
+import dao.LecturerReadOnlyDAO;
+import dao.LecturerReadOnlyDAO.StudentInfo;
+import dao.LecturerReadOnlyDAO.CourseInfo;
 import exception.DatabaseException;
 import exception.InvalidMarkException;
 import model.Assessment;
@@ -24,20 +27,70 @@ import util.FileStorage;
 import util.GPACalculator;
 
 import javax.swing.*;
+import javax.imageio.ImageIO;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.awt.geom.Ellipse2D;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.List;
+import java.util.regex.Pattern;
+import java.sql.SQLException;
 
 public class LecturerDashboard extends JFrame {
+
+    // Consistent with the Admin Dashboard colour palette.
+    private static final Color HEADER = new Color(27, 54, 91);
+    private static final Color SIDEBAR = new Color(15, 23, 42);
+    private static final Color ACTIVE = new Color(37, 99, 235);
+    private static final Color BACKGROUND = new Color(245, 247, 250);
+    private static final Color BORDER = new Color(221, 229, 239);
+    private static final Color TEXT = new Color(30, 41, 59);
+    private static final Color MUTED = new Color(100, 116, 139);
+    private static final Font UI_FONT = new Font("Segoe UI", Font.PLAIN, 13);
+    private static final Font UI_BOLD = new Font("Segoe UI", Font.BOLD, 13);
+
+    private final CardLayout cardLayout = new CardLayout();
+    private final JPanel contentPanel = new JPanel(cardLayout);
+    private final Map<String, JButton> navigation = new LinkedHashMap<>();
+    private JPanel noticesPanel;
+    private JLabel headerPhotoLabel;
 
     private final Lecturer lecturer;
     private final AssessmentDAO assessmentDAO = new AssessmentDAOImpl();
     private final MarkDAO markDAO = new MarkDAOImpl();
     private final ResultDAO resultDAO = new ResultDAOImpl();
+
+    // Lecturer-only, read-only views: undergraduates, exam eligibility, attendance/medical.
+    private final LecturerReadOnlyDAO readOnlyDAO = new LecturerReadOnlyDAO();
+    private List<StudentInfo> allStudents = new ArrayList<>();
+    private boolean studentListsLoaded = false;
+    private JTextField undergraduateSearch;
+    private JTable undergraduateTable;
+    private DefaultTableModel undergraduateModel;
+    private JTextArea undergraduateDetails;
+    private JComboBox<String> eligibilityBatch;
+    private JComboBox<CourseInfo> eligibilityCourse;
+    private JTextField eligibilityStudentId;
+    private JSpinner eligibilityCaWeight;
+    private JTable eligibilityTable;
+    private DefaultTableModel eligibilityModel;
+    private JLabel eligibilitySummaryLabel;
+    private JComboBox<StudentInfo> attendanceStudent;
+    private JComboBox<CourseInfo> attendanceCourse;
+    private JTextArea attendanceSummaryText;
+    private DefaultTableModel attendanceDetailsModel;
+    private DefaultTableModel medicalDetailsModel;
 
     // Upload Marks tab
     private JTextField txtMarkCourse;
@@ -86,92 +139,735 @@ public class LecturerDashboard extends JFrame {
 
     public LecturerDashboard(Lecturer lecturer) {
         this.lecturer = lecturer;
-
-        setTitle("Lecturer Portal");
-        setSize(900, 720);
+        setTitle("FOT-MIS | Lecturer Dashboard");
+        setSize(1360, 900);
+        setMinimumSize(new Dimension(1080, 700));
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                confirmLogout();
+            }
+        });
         initUI();
     }
 
     private void initUI() {
-        JPanel rootPanel = new JPanel(new BorderLayout());
-        rootPanel.add(createHeaderBar(), BorderLayout.NORTH);
+        JPanel root = new JPanel(new BorderLayout());
+        root.setBackground(BACKGROUND);
+        root.add(createHeaderBar(), BorderLayout.NORTH);
+        root.add(createSidebar(), BorderLayout.WEST);
 
-        JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.setFont(new Font("Arial", Font.PLAIN, 14));
-        tabbedPane.addTab("My Profile", createProfilePanel());
-        tabbedPane.addTab("Upload Marks", createUploadMarksPanel());
-        tabbedPane.addTab("Final Results", createFinalResultPanel());
-        tabbedPane.addTab("Grades & GPA", createGradesPanel());
-        tabbedPane.addTab("Course Materials", createMaterialsPanel());
+        contentPanel.setBackground(BACKGROUND);
+        contentPanel.add(createHomePanel(), "DASHBOARD");
+        contentPanel.add(wrapContent(createProfilePanel()), "PROFILE");
+        contentPanel.add(wrapContent(createUploadMarksPanel()), "MARKS");
+        contentPanel.add(wrapContent(createFinalResultPanel()), "RESULTS");
+        contentPanel.add(wrapContent(createGradesPanel()), "GRADES");
+        contentPanel.add(wrapContent(createMaterialsPanel()), "MATERIALS");
+        contentPanel.add(wrapContent(createUndergraduatesPanel()), "UNDERGRADUATES");
+        contentPanel.add(wrapContent(createEligibilityPanel()), "ELIGIBILITY");
+        contentPanel.add(wrapContent(createAttendanceMedicalPanel()), "ATTENDANCE_MEDICAL");
 
-        JPanel noticesPanel = createNoticesPanel();
-        tabbedPane.addTab("Notices", noticesPanel);
-        // load the notices every time the Notices tab is opened
-        tabbedPane.addChangeListener(e -> {
-            if (tabbedPane.getSelectedComponent() == noticesPanel) {
-                loadNotices();
-            }
-        });
-
-        rootPanel.add(tabbedPane, BorderLayout.CENTER);
-        add(rootPanel);
+        noticesPanel = createNoticesPanel();
+        contentPanel.add(wrapContent(noticesPanel), "NOTICES");
+        root.add(contentPanel, BorderLayout.CENTER);
+        setContentPane(root);
+        switchCard("DASHBOARD");
     }
 
-    // ---------------------------------------------------------------- header
-
+    // Header and navigation match the Admin Dashboard's layout and colours.
     private JPanel createHeaderBar() {
-        JPanel bar = new JPanel(new BorderLayout(10, 10));
-        bar.setBackground(new Color(11, 102, 77));
-        bar.setBorder(new EmptyBorder(10, 20, 10, 20));
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(HEADER);
+        header.setPreferredSize(new Dimension(0, 80));
+        header.setBorder(new EmptyBorder(12, 28, 12, 28));
 
-        JLabel lblWelcome = new JLabel("Welcome, " + lecturer.getFirstName() + " " + lecturer.getLastName());
-        lblWelcome.setFont(new Font("Arial", Font.BOLD, 16));
-        lblWelcome.setForeground(Color.WHITE);
-        bar.add(lblWelcome, BorderLayout.WEST);
+        JPanel branding = new JPanel();
+        branding.setOpaque(false);
+        branding.setLayout(new BoxLayout(branding, BoxLayout.Y_AXIS));
+        JLabel title = new JLabel("FACULTY OF TECHNOLOGY MIS");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        title.setForeground(Color.WHITE);
+        JLabel subtitle = new JLabel("University of Ruhuna, Sri Lanka | Lecturer Workspace");
+        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        subtitle.setForeground(new Color(222, 233, 248));
+        branding.add(title);
+        branding.add(Box.createVerticalStrut(4));
+        branding.add(subtitle);
+        header.add(branding, BorderLayout.WEST);
 
-        JButton btnLogout = new JButton("Logout");
-        btnLogout.setBackground(Color.RED);
-        btnLogout.setForeground(Color.WHITE);
-        btnLogout.addActionListener(e -> {
-            int option = JOptionPane.showConfirmDialog(this,
-                    "Are you sure you want to log out?", "Confirm", JOptionPane.YES_NO_OPTION);
-            if (option == JOptionPane.YES_OPTION) {
-                dispose();
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 16, 5));
+        actions.setOpaque(false);
+        JLabel user = new JLabel(lecturer.getFirstName() + " " + lecturer.getLastName());
+        user.setFont(UI_BOLD);
+        user.setForeground(Color.WHITE);
+        // Circular profile picture displayed immediately before the lecturer's name.
+        headerPhotoLabel = new JLabel();
+        headerPhotoLabel.setPreferredSize(new Dimension(44, 44));
+        refreshHeaderPhoto();
+
+        JButton logout = new JButton("Sign Out");
+        logout.setFont(UI_BOLD);
+        logout.setBackground(new Color(239, 68, 68));
+        logout.setForeground(Color.WHITE);
+        logout.setOpaque(true);
+        logout.setFocusPainted(false);
+        logout.setBorder(new EmptyBorder(11, 22, 11, 22));
+        logout.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        logout.addActionListener(e -> confirmLogout());
+        actions.add(headerPhotoLabel);
+        actions.add(user);
+        actions.add(logout);
+        header.add(actions, BorderLayout.EAST);
+        return header;
+    }
+
+    /** Refresh the header avatar after the lecturer saves or removes their profile photo. */
+    public void refreshHeaderPhoto() {
+        if (headerPhotoLabel == null) return;
+
+        final int size = 44;
+        BufferedImage avatar = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = avatar.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g.setColor(ACTIVE);
+        g.fillOval(1, 1, size - 2, size - 2);
+
+        boolean hasPhoto = false;
+        String photoPath = lecturer.getProfilePic();
+        if (photoPath != null && !photoPath.isBlank()) {
+            try {
+                BufferedImage photo = ImageIO.read(new File(photoPath));
+                if (photo != null && photo.getWidth() > 0 && photo.getHeight() > 0) {
+                    final int innerSize = size - 4;
+                    double scale = Math.max((double) innerSize / photo.getWidth(),
+                            (double) innerSize / photo.getHeight());
+                    int width = (int) Math.ceil(photo.getWidth() * scale);
+                    int height = (int) Math.ceil(photo.getHeight() * scale);
+                    g.setClip(new Ellipse2D.Double(2, 2, innerSize, innerSize));
+                    g.drawImage(photo, (size - width) / 2, (size - height) / 2,
+                            width, height, null);
+                    g.setClip(null);
+                    hasPhoto = true;
+                }
+            } catch (IOException | RuntimeException ignored) {
+                // Display the lecturer's first initial when the saved photo cannot be loaded.
+            }
+        }
+
+        if (!hasPhoto) {
+            String firstName = lecturer.getFirstName();
+            String initial = firstName == null || firstName.isBlank()
+                    ? "L" : firstName.substring(0, 1).toUpperCase();
+            g.setColor(Color.WHITE);
+            g.setFont(new Font("Segoe UI", Font.BOLD, 20));
+            FontMetrics fm = g.getFontMetrics();
+            g.drawString(initial, (size - fm.stringWidth(initial)) / 2,
+                    (size - fm.getHeight()) / 2 + fm.getAscent());
+        }
+
+        g.setColor(Color.WHITE);
+        g.setStroke(new BasicStroke(1.5f));
+        g.drawOval(1, 1, size - 3, size - 3);
+        g.dispose();
+        headerPhotoLabel.setIcon(new ImageIcon(avatar));
+    }
+
+    private JPanel createSidebar() {
+        JPanel sidebar = new JPanel(new BorderLayout());
+        sidebar.setPreferredSize(new Dimension(265, 0));
+        sidebar.setBackground(SIDEBAR);
+
+        JPanel menu = new JPanel();
+        menu.setLayout(new BoxLayout(menu, BoxLayout.Y_AXIS));
+        menu.setBackground(SIDEBAR);
+        menu.setBorder(new EmptyBorder(25, 8, 12, 8));
+
+        JLabel label = new JLabel("NAVIGATION MENU");
+        label.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        label.setForeground(new Color(148, 163, 184));
+        label.setBorder(new EmptyBorder(3, 8, 20, 0));
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+        menu.add(label);
+
+        addNavButton(menu, "Dashboard Overview", "DASHBOARD");
+        addNavButton(menu, "My Profile", "PROFILE");
+        addNavButton(menu, "Upload Marks", "MARKS");
+        addNavButton(menu, "Final Results", "RESULTS");
+        addNavButton(menu, "Grades & GPA", "GRADES");
+        addNavButton(menu, "Undergraduates", "UNDERGRADUATES");
+        addNavButton(menu, "Eligibility", "ELIGIBILITY");
+        addNavButton(menu, "Attendance & Medical", "ATTENDANCE_MEDICAL");
+        addNavButton(menu, "Course Materials", "MATERIALS");
+        addNavButton(menu, "Notices", "NOTICES");
+        sidebar.add(menu, BorderLayout.NORTH);
+
+        JPanel bottom = new JPanel(new BorderLayout());
+        bottom.setOpaque(false);
+        bottom.setBorder(new EmptyBorder(8, 8, 12, 8));
+        JButton logout = new JButton("Sign Out");
+        logout.setFont(UI_BOLD);
+        logout.setBackground(new Color(30, 41, 59));
+        logout.setForeground(new Color(248, 113, 113));
+        logout.setOpaque(true);
+        logout.setFocusPainted(false);
+        logout.setBorder(new EmptyBorder(14, 14, 14, 14));
+        logout.addActionListener(e -> confirmLogout());
+        bottom.add(logout, BorderLayout.CENTER);
+        sidebar.add(bottom, BorderLayout.SOUTH);
+        return sidebar;
+    }
+
+    private void addNavButton(JPanel menu, String label, String card) {
+        JButton button = new JButton(label);
+        button.setHorizontalAlignment(SwingConstants.LEFT);
+        button.setAlignmentX(Component.LEFT_ALIGNMENT);
+        button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 53));
+        button.setPreferredSize(new Dimension(240, 53));
+        button.setFont(UI_BOLD);
+        button.setForeground(new Color(226, 232, 240));
+        button.setBackground(SIDEBAR);
+        button.setOpaque(true);
+        button.setBorder(new EmptyBorder(14, 16, 14, 8));
+        button.setFocusPainted(false);
+        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        button.addActionListener(e -> switchCard(card));
+        navigation.put(card, button);
+        menu.add(button);
+        menu.add(Box.createVerticalStrut(4));
+    }
+
+    private void switchCard(String card) {
+        cardLayout.show(contentPanel, card);
+        for (Map.Entry<String, JButton> entry : navigation.entrySet()) {
+            boolean active = entry.getKey().equals(card);
+            JButton button = entry.getValue();
+            button.setBackground(active ? ACTIVE : SIDEBAR);
+            button.setForeground(Color.WHITE);
+        }
+        // Keep the original on-demand notice-refresh behaviour.
+        if ("NOTICES".equals(card) && noticesPanel != null) {
+            loadNotices();
+        }
+        if (("UNDERGRADUATES".equals(card) || "ELIGIBILITY".equals(card)
+                || "ATTENDANCE_MEDICAL".equals(card)) && !studentListsLoaded) {
+            refreshStudentLists();
+        }
+    }
+
+    private JPanel createHomePanel() {
+        JPanel home = new JPanel(new BorderLayout(0, 22));
+        home.setBackground(BACKGROUND);
+        home.setBorder(new EmptyBorder(34, 36, 32, 36));
+
+        JPanel intro = new JPanel();
+        intro.setBackground(BACKGROUND);
+        intro.setLayout(new BoxLayout(intro, BoxLayout.Y_AXIS));
+        JLabel welcome = new JLabel("Welcome back, " + lecturer.getFirstName());
+        welcome.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        welcome.setForeground(TEXT);
+        JLabel description = new JLabel("Faculty of Technology Management Information System | Lecturer Control Center");
+        description.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        description.setForeground(MUTED);
+        intro.add(welcome);
+        intro.add(Box.createVerticalStrut(8));
+        intro.add(description);
+        home.add(intro, BorderLayout.NORTH);
+
+        JPanel cards = new JPanel(new GridLayout(3, 3, 18, 18));
+        cards.setOpaque(false);
+        cards.add(featureCard("My Profile", "Lecturer details", "PROFILE", new Color(37, 99, 235)));
+        cards.add(featureCard("Upload Marks", "Assessments and student marks", "MARKS", new Color(16, 185, 129)));
+        cards.add(featureCard("Final Results", "Calculate and save results", "RESULTS", new Color(245, 158, 11)));
+        cards.add(featureCard("Grades & GPA", "View academic performance", "GRADES", new Color(124, 58, 237)));
+        cards.add(featureCard("Course Materials", "Manage lecture materials", "MATERIALS", new Color(14, 165, 233)));
+        cards.add(featureCard("Notices", "View and post notices", "NOTICES", new Color(239, 68, 68)));
+        cards.add(featureCard("Undergraduates", "Search and view student profiles", "UNDERGRADUATES", new Color(37, 99, 235)));
+        cards.add(featureCard("Eligibility", "Batch or individual exam eligibility", "ELIGIBILITY", new Color(124, 58, 237)));
+        cards.add(featureCard("Attendance & Medical", "Read-only attendance and medicals", "ATTENDANCE_MEDICAL", new Color(14, 165, 233)));
+        JPanel cardsHolder = new JPanel(new BorderLayout());
+        cardsHolder.setOpaque(false);
+        cardsHolder.add(cards, BorderLayout.NORTH);
+        home.add(cardsHolder, BorderLayout.CENTER);
+        return home;
+    }
+
+    private JPanel featureCard(String title, String subtitle, String card, Color accent) {
+        JPanel item = new JPanel(new BorderLayout(0, 12));
+        item.setBackground(Color.WHITE);
+        item.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 5, 1, 1, accent),
+                new EmptyBorder(22, 20, 22, 20)));
+        JPanel text = new JPanel();
+        text.setOpaque(false);
+        text.setLayout(new BoxLayout(text, BoxLayout.Y_AXIS));
+        JLabel heading = new JLabel(title);
+        heading.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        heading.setForeground(TEXT);
+        JLabel details = new JLabel(subtitle);
+        details.setFont(UI_FONT);
+        details.setForeground(MUTED);
+        text.add(heading);
+        text.add(Box.createVerticalStrut(8));
+        text.add(details);
+        item.add(text, BorderLayout.CENTER);
+        JButton open = new JButton("Open  →");
+        open.setFont(UI_BOLD);
+        open.setForeground(ACTIVE);
+        open.setContentAreaFilled(false);
+        open.setBorderPainted(false);
+        open.setHorizontalAlignment(SwingConstants.LEFT);
+        open.setFocusPainted(false);
+        open.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        open.addActionListener(e -> switchCard(card));
+        item.add(open, BorderLayout.SOUTH);
+        return item;
+    }
+
+    /** Add consistent styling without changing any of the existing DAO or button actions. */
+    private JPanel wrapContent(JPanel original) {
+        // LecturerProfilePanel styles its own blue information card; leave those colours intact.
+        if (!(original instanceof LecturerProfilePanel)) {
+            applyFieldStyling(original);
+        }
+        JPanel card = new JPanel(new BorderLayout());
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createLineBorder(BORDER));
+        card.add(original, BorderLayout.CENTER);
+
+        JScrollPane scroll = new JScrollPane(card);
+        scroll.setBorder(null);
+        scroll.getViewport().setBackground(BACKGROUND);
+        scroll.getVerticalScrollBar().setUnitIncrement(18);
+
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setBackground(BACKGROUND);
+        wrapper.setBorder(new EmptyBorder(24, 26, 24, 26));
+        wrapper.add(scroll, BorderLayout.CENTER);
+        return wrapper;
+    }
+
+    private void applyFieldStyling(Component comp) {
+        if (comp instanceof JPanel) {
+            ((JPanel) comp).setBackground(Color.WHITE);
+        }
+        if (comp instanceof JLabel) {
+            JLabel label = (JLabel) comp;
+            Font old = label.getFont();
+            int size = old == null ? 13 : old.getSize();
+            int weight = old == null ? Font.PLAIN : old.getStyle();
+            label.setFont(new Font("Segoe UI", weight, size));
+            label.setForeground(TEXT);
+        } else if (comp instanceof JButton) {
+            JButton button = (JButton) comp;
+            button.setFont(UI_BOLD);
+            button.setOpaque(true);
+            button.setFocusPainted(false);
+            button.setForeground(Color.WHITE);
+            button.setBackground(button.getText().toLowerCase().contains("delete")
+                    ? new Color(239, 68, 68) : ACTIVE);
+            button.setBorder(new EmptyBorder(10, 16, 10, 16));
+            button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        } else if (comp instanceof JTextField) {
+            JTextField field = (JTextField) comp;
+            field.setFont(UI_FONT);
+            field.setBackground(field.isEditable() ? Color.WHITE : BACKGROUND);
+            field.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(BORDER), new EmptyBorder(6, 8, 6, 8)));
+        } else if (comp instanceof JTextArea) {
+            JTextArea area = (JTextArea) comp;
+            area.setFont(UI_FONT);
+            area.setBackground(area.isEditable() ? Color.WHITE : BACKGROUND);
+        } else if (comp instanceof JCheckBox) {
+            JCheckBox checkbox = (JCheckBox) comp;
+            checkbox.setFont(UI_FONT);
+            checkbox.setBackground(Color.WHITE);
+        } else if (comp instanceof JComboBox) {
+            JComboBox<?> combo = (JComboBox<?>) comp;
+            combo.setFont(UI_FONT);
+            combo.setBackground(Color.WHITE);
+        } else if (comp instanceof JTable) {
+            JTable table = (JTable) comp;
+            table.setFont(UI_FONT);
+            table.setRowHeight(30);
+            table.setShowVerticalLines(false);
+            table.setGridColor(BORDER);
+            table.setSelectionBackground(new Color(219, 234, 254));
+            table.setSelectionForeground(TEXT);
+            table.getTableHeader().setFont(UI_BOLD);
+            table.getTableHeader().setBackground(new Color(238, 243, 249));
+            table.getTableHeader().setForeground(TEXT);
+        }
+        if (comp instanceof Container) {
+            for (Component child : ((Container) comp).getComponents()) {
+                applyFieldStyling(child);
+            }
+        }
+    }
+
+    private void confirmLogout() {
+        int option = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to log out?", "Confirm",
+                JOptionPane.YES_NO_OPTION);
+        if (option == JOptionPane.YES_OPTION) {
+            // Original behaviour preserved: closing the lecturer window.
+            // Actual session invalidation / returning to LoginFrame should be wired separately.
+            dispose();
+        }
+    }
+
+    // ---------------------------------------------------------------- Undergraduates / Eligibility / Attendance & Medical
+
+    private DefaultTableModel readOnlyModel(String... columns) {
+        return new DefaultTableModel(columns, 0) {
+            @Override public boolean isCellEditable(int row, int column) { return false; }
+        };
+    }
+
+    private JPanel createUndergraduatesPanel() {
+        JPanel panel = new JPanel(new BorderLayout(12, 12));
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        JPanel searchBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 4));
+        searchBar.add(new JLabel("Search by ID, name, registration, batch or department:"));
+        undergraduateSearch = new JTextField(24);
+        searchBar.add(undergraduateSearch);
+        JButton refresh = new JButton("Refresh Students");
+        refresh.addActionListener(e -> refreshStudentLists());
+        searchBar.add(refresh);
+        panel.add(searchBar, BorderLayout.NORTH);
+
+        undergraduateModel = readOnlyModel("Student ID", "Name", "Registration No.", "Batch", "Department");
+        undergraduateTable = new JTable(undergraduateModel);
+        undergraduateTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(undergraduateModel);
+        undergraduateTable.setRowSorter(sorter);
+        undergraduateSearch.getDocument().addDocumentListener(new DocumentListener() {
+            private void filter() {
+                String value = undergraduateSearch.getText().trim();
+                sorter.setRowFilter(value.isEmpty() ? null :
+                        RowFilter.regexFilter("(?i)" + Pattern.quote(value)));
+            }
+            @Override public void insertUpdate(DocumentEvent e) { filter(); }
+            @Override public void removeUpdate(DocumentEvent e) { filter(); }
+            @Override public void changedUpdate(DocumentEvent e) { filter(); }
+        });
+        undergraduateTable.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) showSelectedUndergraduate();
+        });
+        undergraduateTable.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    StudentInfo selected = selectedUndergraduate();
+                    if (selected != null) {
+                        selectAttendanceStudent(selected.id());
+                        switchCard("ATTENDANCE_MEDICAL");
+                        loadAttendanceMedical();
+                    }
+                }
             }
         });
-        bar.add(btnLogout, BorderLayout.EAST);
-        return bar;
+
+        undergraduateDetails = new JTextArea(7, 40);
+        undergraduateDetails.setEditable(false);
+        undergraduateDetails.setLineWrap(true);
+        undergraduateDetails.setWrapStyleWord(true);
+        undergraduateDetails.setText("Select a student to view read-only profile details.\nDouble-click to view attendance and medicals.");
+        JScrollPane detailScroll = new JScrollPane(undergraduateDetails);
+        detailScroll.setBorder(BorderFactory.createTitledBorder("Selected Student (read-only)"));
+        detailScroll.setPreferredSize(new Dimension(0, 190));
+        panel.add(new JScrollPane(undergraduateTable), BorderLayout.CENTER);
+        panel.add(detailScroll, BorderLayout.SOUTH);
+        return panel;
+    }
+
+    private StudentInfo selectedUndergraduate() {
+        if (undergraduateTable == null || undergraduateTable.getSelectedRow() < 0) return null;
+        int index = undergraduateTable.convertRowIndexToModel(undergraduateTable.getSelectedRow());
+        String id = (String) undergraduateModel.getValueAt(index, 0);
+        for (StudentInfo student : allStudents) {
+            if (student.id().equals(id)) return student;
+        }
+        return null;
+    }
+
+    private void showSelectedUndergraduate() {
+        StudentInfo student = selectedUndergraduate();
+        if (student == null) {
+            undergraduateDetails.setText("Select a student to view their details.");
+            return;
+        }
+        undergraduateDetails.setText("Student ID: " + student.id()
+                + "\nFull Name: " + student.name()
+                + "\nRegistration Number: " + valueOrDash(student.regNo())
+                + "\nBatch: " + valueOrDash(student.batch())
+                + "\nDepartment: " + valueOrDash(student.department())
+                + "\nEmail: " + valueOrDash(student.email())
+                + "\nContact No: " + valueOrDash(student.contact())
+                + "\nRepeat Student: " + (student.repeat() ? "Yes" : "No")
+                + "\nProfile Picture Path: " + valueOrDash(student.photo()));
+        undergraduateDetails.setCaretPosition(0);
+    }
+
+    private String valueOrDash(String value) {
+        return value == null || value.isBlank() ? "-" : value;
+    }
+
+    private JPanel createEligibilityPanel() {
+        JPanel panel = new JPanel(new BorderLayout(12, 12));
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
+        eligibilityBatch = new JComboBox<>();
+        eligibilityBatch.addItem("All Batches");
+        eligibilityBatch.setPreferredSize(new Dimension(105, 32));
+        eligibilityCourse = new JComboBox<>();
+        eligibilityCourse.setPreferredSize(new Dimension(205, 32));
+        eligibilityStudentId = new JTextField(11);
+        eligibilityStudentId.setToolTipText("Optional: enter an individual student ID; blank means selected batch");
+        eligibilityCaWeight = new JSpinner(new SpinnerNumberModel(30.0, 1.0, 100.0, 1.0));
+        eligibilityCaWeight.setPreferredSize(new Dimension(72, 32));
+        JButton check = new JButton("Check Eligibility");
+        toolbar.add(new JLabel("Batch:")); toolbar.add(eligibilityBatch);
+        toolbar.add(new JLabel("Course:")); toolbar.add(eligibilityCourse);
+        toolbar.add(new JLabel("Student ID (optional):")); toolbar.add(eligibilityStudentId);
+        toolbar.add(new JLabel("CA Weight %:")); toolbar.add(eligibilityCaWeight);
+        toolbar.add(check);
+
+        eligibilityModel = readOnlyModel("Student ID", "Name", "Batch", "Course", "CA %",
+                "Attendance %", "With Medical %", "CA Status", "Attendance Status", "Final Eligibility");
+        eligibilityTable = new JTable(eligibilityModel);
+        eligibilityTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        eligibilityTable.setRowHeight(28);
+        for (int i = 0; i < eligibilityTable.getColumnCount(); i++) {
+            eligibilityTable.getColumnModel().getColumn(i).setPreferredWidth(i == 1 ? 170 : 125);
+        }
+        check.addActionListener(e -> checkEligibility(check));
+
+        eligibilitySummaryLabel = new JLabel("Choose a course and batch, then press Check Eligibility.");
+        eligibilitySummaryLabel.setBorder(new EmptyBorder(10, 2, 4, 2));
+        JTextArea note = new JTextArea("Rule: CA >= 40% AND attendance >= 80%. Approved medicals are applied to ABSENT sessions only.\n"
+                + "The result uses CURRENT recorded data. Until all assessments and sessions are complete, treat it as provisional.\n"
+                + "CA Weight must match the sum of the configured counted assessment weights. Missing data shows PENDING.");
+        note.setEditable(false);
+        note.setLineWrap(true);
+        note.setWrapStyleWord(true);
+        note.setBackground(Color.WHITE);
+        note.setFont(UI_FONT);
+        JPanel bottom = new JPanel(new BorderLayout(0, 7));
+        bottom.setBackground(Color.WHITE);
+        bottom.add(eligibilitySummaryLabel, BorderLayout.NORTH);
+        bottom.add(note, BorderLayout.CENTER);
+        panel.add(toolbar, BorderLayout.NORTH);
+        panel.add(new JScrollPane(eligibilityTable), BorderLayout.CENTER);
+        panel.add(bottom, BorderLayout.SOUTH);
+        return panel;
+    }
+
+    private void checkEligibility(JButton button) {
+        CourseInfo course = (CourseInfo) eligibilityCourse.getSelectedItem();
+        if (course == null) {
+            JOptionPane.showMessageDialog(this, "No course found. Refresh Students first.");
+            return;
+        }
+        String studentId = eligibilityStudentId.getText().trim();
+        String batch = (String) eligibilityBatch.getSelectedItem();
+        double caWeight = ((Number) eligibilityCaWeight.getValue()).doubleValue();
+        List<StudentInfo> students = new ArrayList<>();
+        for (StudentInfo student : allStudents) {
+            if (!studentId.isEmpty()) {
+                if (student.id().equalsIgnoreCase(studentId)) students.add(student);
+            } else if ("All Batches".equals(batch) || student.batch().equals(batch)) {
+                students.add(student);
+            }
+        }
+        if (students.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No matching students. Check Student ID or Batch.");
+            return;
+        }
+        button.setEnabled(false);
+        eligibilitySummaryLabel.setText("Loading eligibility records...");
+        // Batch queries involve several DAO reads. Keep the Swing UI responsive.
+        SwingWorker<List<LecturerReadOnlyDAO.EligibilityRow>, Void> worker = new SwingWorker<>() {
+            @Override protected List<LecturerReadOnlyDAO.EligibilityRow> doInBackground() throws Exception {
+                return readOnlyDAO.getEligibility(students, course, caWeight);
+            }
+            @Override protected void done() {
+                button.setEnabled(true);
+                try {
+                    List<LecturerReadOnlyDAO.EligibilityRow> rows = get();
+                    eligibilityModel.setRowCount(0);
+                    int eligible = 0, notEligible = 0, pending = 0;
+                    for (LecturerReadOnlyDAO.EligibilityRow row : rows) {
+                        eligibilityModel.addRow(new Object[]{
+                                row.student().id(), row.student().name(), row.student().batch(),
+                                row.courseId(), displayPct(row.caPct()), displayPct(row.attendancePct()),
+                                displayPct(row.adjustedPct()), row.caStatus(), row.attendanceStatus(),
+                                row.finalStatus()});
+                        switch (row.finalStatus()) {
+                            case "ELIGIBLE" -> eligible++;
+                            case "NOT ELIGIBLE" -> notEligible++;
+                            default -> pending++;
+                        }
+                    }
+                    eligibilitySummaryLabel.setText("Students: " + rows.size() + "    Eligible: "
+                            + eligible + "    Not Eligible: " + notEligible + "    Pending Data: " + pending
+                            + "    (Current data; provisional)");
+                } catch (Exception ex) {
+                    Throwable reason = ex.getCause() != null ? ex.getCause() : ex;
+                    showError(new Exception("Could not load eligibility: " + reason.getMessage(), reason));
+                    eligibilitySummaryLabel.setText("Eligibility query failed. No result displayed.");
+                    eligibilityModel.setRowCount(0);
+                }
+            }
+        };
+        worker.execute();
+    }
+
+    private String displayPct(Double pct) {
+        return pct == null ? "N/A" : String.format("%.1f%%", pct);
+    }
+
+    private JPanel createAttendanceMedicalPanel() {
+        JPanel panel = new JPanel(new BorderLayout(12, 12));
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        attendanceStudent = new JComboBox<>();
+        attendanceStudent.setPreferredSize(new Dimension(270, 32));
+        attendanceCourse = new JComboBox<>();
+        attendanceCourse.setPreferredSize(new Dimension(230, 32));
+        JButton load = new JButton("View Records");
+        load.addActionListener(e -> loadAttendanceMedical());
+        toolbar.add(new JLabel("Student:")); toolbar.add(attendanceStudent);
+        toolbar.add(new JLabel("Course:")); toolbar.add(attendanceCourse);
+        toolbar.add(load);
+
+        attendanceSummaryText = new JTextArea(3, 55);
+        attendanceSummaryText.setEditable(false);
+        attendanceSummaryText.setText("Select a student and course, then click View Records.");
+        attendanceSummaryText.setLineWrap(true);
+        attendanceSummaryText.setWrapStyleWord(true);
+        attendanceSummaryText.setBorder(BorderFactory.createTitledBorder("Attendance Percentage (read-only)"));
+
+        attendanceDetailsModel = readOnlyModel("Type", "Session", "Date", "Status", "Approved Medical?");
+        JTable attendanceRecords = new JTable(attendanceDetailsModel);
+        medicalDetailsModel = readOnlyModel("ID", "Type", "Session", "Medical Date", "Submitted", "Description", "Status");
+        JTable medicalRecords = new JTable(medicalDetailsModel);
+        medicalRecords.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        for (int i = 0; i < medicalRecords.getColumnCount(); i++) {
+            medicalRecords.getColumnModel().getColumn(i).setPreferredWidth(i == 5 ? 240 : 120);
+        }
+        JScrollPane attendanceScroll = new JScrollPane(attendanceRecords);
+        attendanceScroll.setBorder(BorderFactory.createTitledBorder("Attendance Sessions (read-only)"));
+        JScrollPane medicalScroll = new JScrollPane(medicalRecords);
+        medicalScroll.setBorder(BorderFactory.createTitledBorder("Medical Submissions (read-only)"));
+        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, attendanceScroll, medicalScroll);
+        split.setResizeWeight(0.5);
+        split.setDividerLocation(240);
+        JPanel north = new JPanel(new BorderLayout(0, 8));
+        north.setBackground(Color.WHITE);
+        north.add(toolbar, BorderLayout.NORTH);
+        north.add(attendanceSummaryText, BorderLayout.CENTER);
+        panel.add(north, BorderLayout.NORTH);
+        panel.add(split, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private void selectAttendanceStudent(String studentId) {
+        if (attendanceStudent == null) return;
+        for (int i = 0; i < attendanceStudent.getItemCount(); i++) {
+            StudentInfo item = attendanceStudent.getItemAt(i);
+            if (item.id().equals(studentId)) {
+                attendanceStudent.setSelectedIndex(i);
+                return;
+            }
+        }
+    }
+
+    private void loadAttendanceMedical() {
+        StudentInfo student = (StudentInfo) attendanceStudent.getSelectedItem();
+        CourseInfo course = (CourseInfo) attendanceCourse.getSelectedItem();
+        if (student == null || course == null) {
+            JOptionPane.showMessageDialog(this, "Select a student and course first.");
+            return;
+        }
+        try {
+            LecturerReadOnlyDAO.AttendanceSummary a = readOnlyDAO.getAttendance(student.id(), course.id());
+            List<LecturerReadOnlyDAO.MedicalRow> medicals = readOnlyDAO.getMedicals(student.id(), course.id());
+            String prefix = student.name() + "  |  " + course.id() + "\n";
+            if (a.hasData()) {
+                attendanceSummaryText.setText(prefix
+                        + "Theory: " + a.theoryPresent() + "/" + a.theoryTotal() + " (" + displayPct(a.theoryTotal() == 0 ? null : a.theoryPct()) + ")"
+                        + "  |  Practical: " + a.practicalPresent() + "/" + a.practicalTotal() + " (" + displayPct(a.practicalTotal() == 0 ? null : a.practicalPct()) + ")\n"
+                        + "Combined: " + displayPct(a.combined())
+                        + "  |  With APPROVED Medical: " + displayPct(a.combinedAdjusted())
+                        + "  |  Recorded sessions only (provisional).");
+            } else {
+                attendanceSummaryText.setText(prefix + "No attendance sessions recorded for this course.");
+            }
+            attendanceDetailsModel.setRowCount(0);
+            for (LecturerReadOnlyDAO.AttendanceRow r : a.rows()) {
+                attendanceDetailsModel.addRow(new Object[]{r.type(), r.session(), r.date(),
+                        r.status(), r.approvedMedical() && "ABSENT".equalsIgnoreCase(r.status()) ? "YES" : "NO"});
+            }
+            medicalDetailsModel.setRowCount(0);
+            for (LecturerReadOnlyDAO.MedicalRow m : medicals) {
+                medicalDetailsModel.addRow(new Object[]{m.id(), m.type(), m.session(),
+                        m.medicalDate(), m.submitted(), m.description(), m.status()});
+            }
+            attendanceSummaryText.setCaretPosition(0);
+        } catch (SQLException ex) {
+            attendanceDetailsModel.setRowCount(0);
+            medicalDetailsModel.setRowCount(0);
+            attendanceSummaryText.setText("Could not load attendance and medical records.");
+            showError(ex);
+        }
+    }
+
+    private void refreshStudentLists() {
+        try {
+            List<StudentInfo> students = readOnlyDAO.getStudents();
+            List<CourseInfo> courses = readOnlyDAO.getCourses();
+            allStudents = students;
+            undergraduateModel.setRowCount(0);
+            for (StudentInfo student : students) {
+                undergraduateModel.addRow(new Object[]{student.id(), student.name(),
+                        student.regNo(), student.batch(), student.department()});
+            }
+            undergraduateDetails.setText("Select a student to view read-only details. Double-click to view attendance.");
+            Object priorBatch = eligibilityBatch.getSelectedItem();
+            eligibilityBatch.removeAllItems();
+            eligibilityBatch.addItem("All Batches");
+            java.util.Set<String> batches = new java.util.TreeSet<>();
+            for (StudentInfo student : students) if (student.batch() != null) batches.add(student.batch());
+            for (String batch : batches) eligibilityBatch.addItem(batch);
+            if (priorBatch != null) eligibilityBatch.setSelectedItem(priorBatch);
+            CourseInfo priorCourse = (CourseInfo) eligibilityCourse.getSelectedItem();
+            CourseInfo priorAttendanceCourse = (CourseInfo) attendanceCourse.getSelectedItem();
+            String priorStudentId = attendanceStudent.getSelectedItem() instanceof StudentInfo si ? si.id() : null;
+            eligibilityCourse.removeAllItems();
+            attendanceCourse.removeAllItems();
+            for (CourseInfo course : courses) {
+                eligibilityCourse.addItem(course);
+                attendanceCourse.addItem(course);
+            }
+            if (priorCourse != null) eligibilityCourse.setSelectedItem(priorCourse);
+            if (priorAttendanceCourse != null) attendanceCourse.setSelectedItem(priorAttendanceCourse);
+            attendanceStudent.removeAllItems();
+            for (StudentInfo student : students) attendanceStudent.addItem(student);
+            if (priorStudentId != null) selectAttendanceStudent(priorStudentId);
+            studentListsLoaded = true;
+        } catch (SQLException ex) {
+            showError(ex);
+            studentListsLoaded = false;
+        }
     }
 
     // ---------------------------------------------------------------- profile
 
     private JPanel createProfilePanel() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
-
-        JLabel lblTitle = new JLabel("My Profile Information");
-        lblTitle.setFont(new Font("Arial", Font.BOLD, 18));
-        panel.add(lblTitle, BorderLayout.NORTH);
-
-        JPanel center = new JPanel(new GridLayout(6, 2, 10, 10));
-        center.add(new JLabel("Lecturer ID:"));
-        center.add(new JLabel(nz(lecturer.getUserId())));
-        center.add(new JLabel("Full Name:"));
-        center.add(new JLabel(lecturer.getFirstName() + " " + lecturer.getLastName()));
-        center.add(new JLabel("Department:"));
-        center.add(new JLabel(nz(lecturer.getDepartment())));
-        center.add(new JLabel("Email:"));
-        center.add(new JLabel(nz(lecturer.getEmail())));
-        center.add(new JLabel("Contact No:"));
-        center.add(new JLabel(nz(lecturer.getContactNo())));
-        center.add(new JLabel("Profile Picture:"));
-        center.add(new JLabel(nz(lecturer.getProfilePic())));
-
-        panel.add(center, BorderLayout.CENTER);
-        return panel;
+        return new LecturerProfilePanel(lecturer);
     }
 
     // ---------------------------------------------------------------- upload marks

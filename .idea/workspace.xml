@@ -6,17 +6,28 @@
   <component name="ChangeListManager">
     <list default="true" id="cabfa251-f4e3-4e63-acf9-9289a1de6069" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/database/DBConnection.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/database/DBConnection.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/resources/db.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/resources/db.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/OOPP-2026-GP-21/Main.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/OOPP-2026-GP-21/Main.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/OOPP-2026-GP-21/dao/CourseDAO.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/OOPP-2026-GP-21/dao/CourseDAO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Main.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/dao/CourseDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/dao/CourseDAO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/dao/UserDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/dao/UserDAO.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="DatabaseLocalColorSettings">
+    <colors>
+      <entry key="a0232cdd-2957-4903-9945-75a2bed05d57" value="" />
+    </colors>
+  </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
+        <option value="SimpleSourceFile" />
+        <option value="Interface" />
+        <option value="Record" />
         <option value="Class" />
       </list>
     </option>
@@ -26,23 +37,23 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.0000000003456426" />
-      <entry key="MS500" value="1.0128152017374488" />
-      <entry key="S2" value="1.33645838951827" />
-      <entry key="S5" value="1.6468037731700345" />
-      <entry key="S10" value="1.8042411163140284" />
-      <entry key="S30" value="1.9299564658358377" />
-      <entry key="S60" value="1.9654047782404849" />
-      <entry key="M2" value="2.0146106501643084" />
-      <entry key="M5" value="2.2470344620819236" />
-      <entry key="M10" value="2.500627599183563" />
-      <entry key="M15" value="2.6311093910693115" />
-      <entry key="M30" value="2.7973252704724567" />
-      <entry key="H1" value="3.2058662877112787" />
-      <entry key="H2" value="6.436204062198742" />
-      <entry key="H4" value="14.634207937826023" />
-      <entry key="D1" value="34.88476444330926" />
-      <entry key="W1" value="40.89376975094111" />
+      <entry key="MS100" value="1.000000000071662" />
+      <entry key="MS500" value="1.0093736760581378" />
+      <entry key="S2" value="1.3764739212683545" />
+      <entry key="S5" value="1.9628286674217597" />
+      <entry key="S10" value="2.3713945489194206" />
+      <entry key="S30" value="2.758937660141338" />
+      <entry key="S60" value="2.8846350813638373" />
+      <entry key="M2" value="3.1065470260849635" />
+      <entry key="M5" value="3.9266717196198617" />
+      <entry key="M10" value="4.715483696784176" />
+      <entry key="M15" value="5.228202234958188" />
+      <entry key="M30" value="6.72471845143747" />
+      <entry key="H1" value="9.503889127687955" />
+      <entry key="H2" value="16.38441798942305" />
+      <entry key="H4" value="49.841300014150974" />
+      <entry key="D1" value="327.5803194210327" />
+      <entry key="W1" value="511.6241695159307" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
@@ -50,37 +61,37 @@
       <entry key="S2" value="0.0" />
       <entry key="S5" value="0.0" />
       <entry key="S10" value="0.0" />
-      <entry key="S30" value="9.539159076646829E-242" />
-      <entry key="S60" value="4.238089823123962E-121" />
-      <entry key="M2" value="1.3025630694005297E-60" />
-      <entry key="M5" value="3.228337287502399E-24" />
-      <entry key="M10" value="5.049435756194917E-12" />
-      <entry key="M15" value="6.209646809904538E-8" />
-      <entry key="M30" value="8.017100820211956E-4" />
-      <entry key="H1" value="0.09313898977882612" />
-      <entry key="H2" value="1.0100524709015344" />
-      <entry key="H4" value="3.331473571354954" />
-      <entry key="D1" value="9.01365472696125" />
-      <entry key="W1" value="10.691433117613885" />
+      <entry key="S30" value="0.0" />
+      <entry key="S60" value="8.015305763700921E-172" />
+      <entry key="M2" value="4.1203773732289786E-86" />
+      <entry key="M5" value="1.4418563726314624E-34" />
+      <entry key="M10" value="2.3526687401448383E-17" />
+      <entry key="M15" value="1.298476026059558E-11" />
+      <entry key="M30" value="7.350988436850518E-6" />
+      <entry key="H1" value="0.006329184141406073" />
+      <entry key="H2" value="0.26749958092890064" />
+      <entry key="H4" value="2.452395639955752" />
+      <entry key="D1" value="29.914115082797977" />
+      <entry key="W1" value="54.00018392610371" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="0.7955364840132605" />
-      <entry key="MS500" value="0.9673732878944873" />
-      <entry key="S2" value="1.3202245672645747" />
-      <entry key="S5" value="1.6384844186512735" />
-      <entry key="S10" value="1.7996184280936405" />
-      <entry key="S30" value="1.9282922959125532" />
-      <entry key="S60" value="1.9645548622586622" />
-      <entry key="M2" value="2.014166971455679" />
-      <entry key="M5" value="2.24681547765434" />
-      <entry key="M10" value="2.500495115404" />
-      <entry key="M15" value="2.6310132249116833" />
-      <entry key="M30" value="2.798069619937784" />
-      <entry key="H1" value="3.2987099017757644" />
-      <entry key="H2" value="7.444738954053905" />
-      <entry key="H4" value="17.96315012316992" />
-      <entry key="D1" value="43.89726260389431" />
-      <entry key="W1" value="51.58500642247452" />
+      <entry key="MS100" value="4.8555693588623965E-5" />
+      <entry key="MS500" value="0.13775330838535293" />
+      <entry key="S2" value="0.8100627374249229" />
+      <entry key="S5" value="1.5868288794168657" />
+      <entry key="S10" value="2.135054965961962" />
+      <entry key="S30" value="2.665317121957888" />
+      <entry key="S60" value="2.8351900192081674" />
+      <entry key="M2" value="3.0774368887403414" />
+      <entry key="M5" value="3.9073025067277496" />
+      <entry key="M10" value="4.702070504747972" />
+      <entry key="M15" value="5.217870268051901" />
+      <entry key="M30" value="6.718200414461745" />
+      <entry key="H1" value="9.506034734617803" />
+      <entry key="H2" value="16.648463667249104" />
+      <entry key="H4" value="52.288178322455146" />
+      <entry key="D1" value="357.4879406457723" />
+      <entry key="W1" value="565.6228577283091" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -92,29 +103,49 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Application.TestDBConnection.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "TG-2024-2125",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/wwwsa/OneDrive/Desktop/sem 3/oop project/OOPP-2026-GP-21",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.jshint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.jshint": "",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "SDKs",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.2"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Application.Main.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestAdmin.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestAllUsers.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestCourseDAO.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestDBConnection.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestDeleteCourse.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestDeleteUser.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestLogin.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestNoticeDAO.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestPasswordService.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestReadCourses.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestReadUser.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestTimetableDAO.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestUpdateCourse.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestUpdateUser.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestUserDAO.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;TG-2024-2125&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/wwwsa/OneDrive/Desktop/sem 3/oop project/OOPP-2026-GP-21&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.jshint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.jshint&quot;: &quot;&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;
+  },
+  &quot;keyToStringList&quot;: {
+    &quot;DatabaseDriversLRU&quot;: [
+      &quot;mysql&quot;
+    ]
   }
-}]]></component>
+}</component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>

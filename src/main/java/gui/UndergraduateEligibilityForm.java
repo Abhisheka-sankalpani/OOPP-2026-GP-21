@@ -1,6 +1,8 @@
 package gui;
 
 import dao.UndergraduateDAO;
+import exception.DatabaseException;
+import model.Result;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -8,6 +10,8 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
+import java.util.Map;
+import java.util.Locale;
 
 public class UndergraduateEligibilityForm extends JPanel {
 
@@ -136,27 +140,67 @@ public class UndergraduateEligibilityForm extends JPanel {
         return new JLabel("0.00");
     }
 
+    /**
+     * Refresh the Student view from the same saved final results as Lecturer.
+     * The 7-column eligibility data remains unchanged for the engine dialog.
+     */
     public void loadEligibilityData() {
+        // SGPA is calculated for confirmed Level 2 Semester 1 course IDs.
+        // CGPA is calculated from all saved final results.
+        String actualSGPA = undergraduateDAO.getStudentSGPA(studentId);
         String actualCGPA = undergraduateDAO.getStudentCGPA(studentId);
-        if (lblSGPAVal != null) lblSGPAVal.setText(actualCGPA != null && !actualCGPA.isEmpty() ? actualCGPA : "N/A");
-        if (lblCGPAVal != null) lblCGPAVal.setText(actualCGPA != null && !actualCGPA.isEmpty() ? actualCGPA : "N/A");
+        if (lblSGPAVal != null) {
+            lblSGPAVal.setText(actualSGPA);
+            lblSGPAVal.setToolTipText("Level 2 Semester 1; based on saved final results only.");
+        }
+        if (lblCGPAVal != null) {
+            lblCGPAVal.setText(actualCGPA == null || actualCGPA.isBlank() ? "N/A" : actualCGPA);
+        }
 
         modelCombined.setRowCount(0);
-        List<Object[]> gradesList = undergraduateDAO.getDetailedEligibilityData(studentId);
-        if (gradesList != null && !gradesList.isEmpty()) {
-            for (Object[] row : gradesList) {
-                modelCombined.addRow(new Object[]{
-                        row[0], // Course ID
-                        row[2], // CA Mark
-                        row[3], // CA Pass
-                        "-",    // End
-                        "-",    // Total
-                        "-",    // Grade
-                        "-",    // GPA
-                        row[6]  // Eligibility Status
-                });
-            }
+
+        final Map<String, Result> savedResults;
+        try {
+            savedResults = undergraduateDAO.getSavedResultsByCourse(studentId);
+        } catch (DatabaseException ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Unable to read saved final results: " + ex.getMessage(),
+                    "Result Loading Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
+
+        List<Object[]> eligibilityRows = undergraduateDAO.getDetailedEligibilityData(studentId);
+        for (Object[] row : eligibilityRows) {
+            String courseId = String.valueOf(row[0]);
+            Result result = savedResults.get(courseId);
+
+            // Only display final exam fields if the Lecturer has saved a result.
+            String finalExam = "-";
+            String total = "-";
+            String grade = "-";
+            String gpv = "-";
+            if (result != null) {
+                finalExam = decimal(result.getFinalExamScore());
+                total = decimal(result.getTotalScore());
+                grade = result.getGrade() == null ? "-" : result.getGrade().getLabel();
+                gpv = result.getGrade() == null ? "-" : decimal(result.getGradePoint());
+            }
+
+            modelCombined.addRow(new Object[]{
+                    row[0],     // Course ID
+                    row[2],     // CA percentage (out of 100)
+                    row[3],     // CA eligibility
+                    finalExam,  // Lecturer saved exam mark
+                    total,      // Lecturer saved final weighted score
+                    grade,      // Lecturer saved grade
+                    gpv,        // Lecturer saved grade point
+                    row[6]      // Final EXAM ELIGIBILITY (CA + attendance)
+            });
+        }
+    }
+
+    private static String decimal(double value) {
+        return String.format(Locale.US, "%.2f", value);
     }
 
     private void openEligibilityEngineDialog() {
@@ -216,7 +260,7 @@ public class UndergraduateEligibilityForm extends JPanel {
                 dialogModel.addRow(row);
             }
         } else {
-            dialogModel.addRow(new Object[]{"N/A", "No records found", "0.0", "Not Eligible", "0.0%", "Not Eligible", "Not Eligible"});
+            dialogModel.addRow(new Object[]{"N/A", "No records found", "-", "PENDING", "-", "PENDING", "PENDING"});
         }
 
         JScrollPane scrollPane = new JScrollPane(dialogTable);

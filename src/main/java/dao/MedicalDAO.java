@@ -93,8 +93,24 @@ public class MedicalDAO {
         }
         return isSuccess;
     }
-    public boolean addMedical(String studentId, String courseId, int sessionNo, String type, String date) {
-        String query = "INSERT INTO medical (student_id, course_id, session_no, session_type, medical_date, approval_status) VALUES (?, ?, ?, ?, ?, 'Pending')";
+    public boolean addMedical(String studentId, String courseId,
+                              int sessionNo, String type, String date) {
+
+        java.time.LocalDate medicalDate = java.time.LocalDate.parse(date);
+        java.time.LocalDate uploadDate = java.time.LocalDate.now();
+
+        long days = java.time.temporal.ChronoUnit.DAYS
+                .between(medicalDate, uploadDate);
+
+        if (days < 0 || days > 14) {
+            return false;
+        }
+
+        String query = "INSERT INTO medical " +
+                "(student_id, course_id, session_no, session_type, " +
+                "medical_date, submission_date, approval_status) " +
+                "VALUES (?, ?, ?, ?, ?, ?, 'Pending')";
+
         try (java.sql.Connection conn = database.DBConnection.getConnection();
              java.sql.PreparedStatement stmt = conn.prepareStatement(query)) {
 
@@ -102,9 +118,11 @@ public class MedicalDAO {
             stmt.setString(2, courseId);
             stmt.setInt(3, sessionNo);
             stmt.setString(4, type);
-            stmt.setString(5, date);
+            stmt.setDate(5, java.sql.Date.valueOf(medicalDate));
+            stmt.setDate(6, java.sql.Date.valueOf(uploadDate));
 
             return stmt.executeUpdate() > 0;
+
         } catch (Exception e) {
             e.printStackTrace();
             return false;

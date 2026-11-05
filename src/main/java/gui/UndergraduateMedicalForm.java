@@ -2,6 +2,8 @@ package gui;
 
 import dao.MedicalDAO;
 import model.Medical;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -61,7 +63,10 @@ public class UndergraduateMedicalForm extends JPanel {
         lblTableTitle.setForeground(UITheme.COLOR_TEXT_MAIN);
         tableCard.add(lblTableTitle, BorderLayout.NORTH);
 
-        String[] colNames = {"Course ID", "Session Number", "Session Type", "Medical Date", "Approval Status"};
+        String[] colNames = {
+                "Course ID", "Session Number", "Session Type",
+                "Medical Date", "Upload Date", "Approval Status"
+        };
         modelMedical = new DefaultTableModel(colNames, 0) {
             @Override
             public boolean isCellEditable(int r, int c) {
@@ -83,7 +88,11 @@ public class UndergraduateMedicalForm extends JPanel {
         tableMedical.getColumnModel().getColumn(3).setPreferredWidth(140);
         tableMedical.getColumnModel().getColumn(3).setCellRenderer(centerRenderer);
         tableMedical.getColumnModel().getColumn(4).setPreferredWidth(140);
-        tableMedical.getColumnModel().getColumn(4).setCellRenderer(new UITheme.StatusBadgeRenderer());
+        tableMedical.getColumnModel().getColumn(4).setCellRenderer(centerRenderer);
+
+        tableMedical.getColumnModel().getColumn(5).setPreferredWidth(140);
+        tableMedical.getColumnModel().getColumn(5).setCellRenderer(new UITheme.StatusBadgeRenderer());
+
 
         JScrollPane scrollPane = new JScrollPane(tableMedical);
         scrollPane.setBorder(BorderFactory.createLineBorder(UITheme.COLOR_CARD_BORDER, 1));
@@ -131,7 +140,7 @@ public class UndergraduateMedicalForm extends JPanel {
         formGrid.add(createFormField("Course ID (e.g. ICT2133):", txtCourseId));
         formGrid.add(createFormField("Session No:", txtSessionNo));
         formGrid.add(createFormField("Session Type:", cmbSessionType));
-        formGrid.add(createFormField("Medical Date (YYYY-MM-DD):", txtDate));
+        formGrid.add(createFormField("Absent Date (YYYY-MM-DD):", txtDate));
 
         formGrid.add(createFormField("Reason / Description:", txtDescription));
 
@@ -180,6 +189,18 @@ public class UndergraduateMedicalForm extends JPanel {
 
         try {
             int sessionNo = Integer.parseInt(sessionNoStr);
+            LocalDate medicalDate = LocalDate.parse(date);
+            LocalDate uploadDate = LocalDate.now();
+
+            long days = ChronoUnit.DAYS.between(medicalDate, uploadDate);
+
+            if (days < 0 || days > 14) {
+                JOptionPane.showMessageDialog(this,
+                        "Medical must be submitted within 14 days!",
+                        "Invalid Medical Date",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
             boolean isSuccess = medicalDAO.addMedical(studentId, courseId, sessionNo, type, date);
 
@@ -195,7 +216,16 @@ public class UndergraduateMedicalForm extends JPanel {
                 JOptionPane.showMessageDialog(this, "Failed to submit medical certificate. Please verify details.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Session number must be a valid numeric digit!", "Input Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Session number must be a valid numeric digit!",
+                    "Input Error",
+                    JOptionPane.ERROR_MESSAGE);
+
+        } catch (java.time.format.DateTimeParseException ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Enter a valid date (YYYY-MM-DD)!",
+                    "Invalid Date",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -211,6 +241,7 @@ public class UndergraduateMedicalForm extends JPanel {
                     sessionDisplay,
                     m.getSessionType(),
                     m.getMedicalDate(),
+                    m.getSubmissionDate(),
                     m.getApprovalStatus()
             };
             modelMedical.addRow(row);

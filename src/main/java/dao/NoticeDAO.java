@@ -4,6 +4,7 @@ import database.DBConnection;
 import model.Notice;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -20,8 +21,8 @@ public class NoticeDAO {
         validateNotice(notice);
 
         String sql = "INSERT INTO notice " +
-                "(title, content, target_role) " +
-                "VALUES (?, ?, ?)";
+                "(title, content, target_role, from_date, to_date) " +
+                "VALUES (?, ?, ?, ?, ?)";
 
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(
@@ -30,6 +31,8 @@ public class NoticeDAO {
             ps.setString(1, notice.getTitle().trim());
             ps.setString(2, notice.getContent().trim());
             ps.setString(3, getValidTargetRole(notice.getTargetRole()));
+            ps.setDate(4, toSqlDate(notice.getFromDate()));
+            ps.setDate(5, toSqlDate(notice.getToDate()));
 
             int rows = ps.executeUpdate();
 
@@ -55,7 +58,7 @@ public class NoticeDAO {
     public Notice getNoticeById(int noticeId) throws SQLException {
 
         String sql = "SELECT notice_id, title, content, " +
-                "posted_date, target_role " +
+                "posted_date, target_role, from_date, to_date " +
                 "FROM notice WHERE notice_id = ?";
 
         try (Connection con = DBConnection.getConnection();
@@ -81,7 +84,7 @@ public class NoticeDAO {
         List<Notice> notices = new ArrayList<>();
 
         String sql = "SELECT notice_id, title, content, " +
-                "posted_date, target_role " +
+                "posted_date, target_role, from_date, to_date " +
                 "FROM notice " +
                 "ORDER BY posted_date DESC, notice_id DESC";
 
@@ -115,7 +118,9 @@ public class NoticeDAO {
         String sql = "UPDATE notice SET " +
                 "title = ?, " +
                 "content = ?, " +
-                "target_role = ? " +
+                "target_role = ?, " +
+                "from_date = ?, " +
+                "to_date = ? " +
                 "WHERE notice_id = ?";
 
         try (Connection con = DBConnection.getConnection();
@@ -124,7 +129,9 @@ public class NoticeDAO {
             ps.setString(1, notice.getTitle().trim());
             ps.setString(2, notice.getContent().trim());
             ps.setString(3, getValidTargetRole(notice.getTargetRole()));
-            ps.setInt(4, notice.getNoticeId());
+            ps.setDate(4, toSqlDate(notice.getFromDate()));
+            ps.setDate(5, toSqlDate(notice.getToDate()));
+            ps.setInt(6, notice.getNoticeId());
 
             int rows = ps.executeUpdate();
 
@@ -163,7 +170,7 @@ public class NoticeDAO {
         List<Notice> notices = new ArrayList<>();
 
         String sql = "SELECT notice_id, title, content, " +
-                "posted_date, target_role " +
+                "posted_date, target_role, from_date, to_date " +
                 "FROM notice " +
                 "WHERE LOWER(title) LIKE ? " +
                 "OR LOWER(content) LIKE ? " +
@@ -202,7 +209,7 @@ public class NoticeDAO {
         }
 
         String sql = "SELECT notice_id, title, content, " +
-                "posted_date, target_role " +
+                "posted_date, target_role, from_date, to_date " +
                 "FROM notice " +
                 "ORDER BY posted_date DESC, notice_id DESC " +
                 "LIMIT ?";
@@ -246,18 +253,18 @@ public class NoticeDAO {
     private Notice mapResultSetToNotice(ResultSet rs)
             throws SQLException {
 
-        return new Notice(
-
+        Notice notice = new Notice(
                 rs.getInt("notice_id"),
-
                 rs.getString("title"),
-
                 rs.getString("content"),
-
                 rs.getTimestamp("posted_date"),
-
                 rs.getString("target_role")
         );
+        Date from = rs.getDate("from_date");
+        Date to = rs.getDate("to_date");
+        notice.setFromDate(from == null ? null : from.toLocalDate());
+        notice.setToDate(to == null ? null : to.toLocalDate());
+        return notice;
     }
 
 
@@ -293,6 +300,12 @@ public class NoticeDAO {
             );
         }
 
+        // Validate display period (inclusive). Old notices may have NULL bounds.
+        if (notice.getFromDate() != null && notice.getToDate() != null
+                && notice.getToDate().isBefore(notice.getFromDate())) {
+            throw new IllegalArgumentException("To Date cannot be before From Date.");
+        }
+
         // Validate target_role VARCHAR(20)
         getValidTargetRole(notice.getTargetRole());
     }
@@ -316,13 +329,19 @@ public class NoticeDAO {
         return role;
     }
 
-    // Student module: notices addressed to STUDENT or ALL.
+    private static Date toSqlDate(java.time.LocalDate date) {
+        return date == null ? null : Date.valueOf(date);
+    }
+
+    // Student module: active notices addressed to STUDENT or ALL.
     // No checked exception is exposed to preserve UndergraduateNoticeForm compatibility.
     public List<Notice> getStudentNotices() {
         List<Notice> notices = new ArrayList<>();
-        String sql = "SELECT notice_id, title, content, posted_date, target_role "
+        String sql = "SELECT notice_id, title, content, posted_date, target_role, from_date, to_date "
                 + "FROM notice "
                 + "WHERE target_role IN ('STUDENT', 'ALL') "
+                + "AND (from_date IS NULL OR from_date <= CURDATE()) "
+                + "AND (to_date IS NULL OR to_date >= CURDATE()) "
                 + "ORDER BY posted_date DESC, notice_id DESC";
 
         try (Connection con = DBConnection.getConnection();

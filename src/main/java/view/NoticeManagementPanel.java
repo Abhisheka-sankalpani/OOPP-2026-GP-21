@@ -9,6 +9,8 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 
 import java.awt.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +29,8 @@ public class NoticeManagementPanel extends JPanel {
     private JTextField titleField;
     private JTextArea contentArea;
     private JComboBox<String> targetRoleCombo;
+    private JTextField fromDateField;
+    private JTextField toDateField;
 
     private JLabel postedDateLabel;
     private JLabel statusLabel;
@@ -223,6 +227,20 @@ public class NoticeManagementPanel extends JPanel {
                 )
         );
 
+
+        // =====================================
+        // NOTICE DISPLAY PERIOD (inclusive)
+        // =====================================
+
+        fromDateField = UIStyle.createTextField(12);
+        fromDateField.setToolTipText("YYYY-MM-DD (first visible day)");
+        fromDateField.setText(LocalDate.now().toString());
+        formBody.add(createFormField("From Date * (YYYY-MM-DD)", fromDateField, 75));
+
+        toDateField = UIStyle.createTextField(12);
+        toDateField.setToolTipText("YYYY-MM-DD (last visible day)");
+        toDateField.setText(LocalDate.now().plusDays(7).toString());
+        formBody.add(createFormField("To Date * (YYYY-MM-DD)", toDateField, 75));
 
         // =====================================
         // POSTED DATE
@@ -428,6 +446,9 @@ public class NoticeManagementPanel extends JPanel {
                 "Notice ID",
                 "Title",
                 "Target Role",
+                "From Date",
+                "To Date",
+                "Status",
                 "Posted Date"
         };
 
@@ -630,6 +651,12 @@ public class NoticeManagementPanel extends JPanel {
 
                                                 notice.getTargetRole(),
 
+                                                notice.getFromDate(),
+
+                                                notice.getToDate(),
+
+                                                getDisplayStatus(notice),
+
                                                 notice.getPostedDate()
                                         }
                                 );
@@ -704,6 +731,13 @@ public class NoticeManagementPanel extends JPanel {
                 notice.getTargetRole()
         );
 
+        fromDateField.setText(
+                notice.getFromDate() == null ? "" : notice.getFromDate().toString()
+        );
+        toDateField.setText(
+                notice.getToDate() == null ? "" : notice.getToDate().toString()
+        );
+
         postedDateLabel.setText(
                 String.valueOf(
                         notice.getPostedDate()
@@ -761,14 +795,46 @@ public class NoticeManagementPanel extends JPanel {
         }
 
 
-        // Create Notice Object
-        return new Notice(
-                title,
-                content,
-                targetRole
-        );
+        LocalDate fromDate = parseOptionalDate(fromDateField.getText(), "From Date");
+        LocalDate toDate = parseOptionalDate(toDateField.getText(), "To Date");
+
+        // Require both dates for new notices; existing legacy records may be unbounded.
+        if (selectedNoticeId == null && (fromDate == null || toDate == null)) {
+            throw new IllegalArgumentException("From Date and To Date are required.");
+        }
+        if (fromDate != null && toDate != null && toDate.isBefore(fromDate)) {
+            throw new IllegalArgumentException("To Date cannot be before From Date.");
+        }
+
+        Notice notice = new Notice(title, content, targetRole);
+        notice.setFromDate(fromDate);
+        notice.setToDate(toDate);
+        return notice;
     }
 
+
+    /** Blank date is allowed when editing an old notice with an unlimited period. */
+    private LocalDate parseOptionalDate(String input, String fieldName) {
+        String value = input == null ? "" : input.trim();
+        if (value.isEmpty()) return null;
+        try {
+            return LocalDate.parse(value);
+        } catch (DateTimeParseException ex) {
+            throw new IllegalArgumentException(fieldName + " must be YYYY-MM-DD (example: 2026-11-05).");
+        }
+    }
+
+    /** Used only in the Admin table. The DAO filters role dashboards automatically. */
+    private String getDisplayStatus(Notice notice) {
+        LocalDate today = LocalDate.now();
+        if (notice.getFromDate() != null && today.isBefore(notice.getFromDate())) {
+            return "Scheduled";
+        }
+        if (notice.getToDate() != null && today.isAfter(notice.getToDate())) {
+            return "Expired";
+        }
+        return "Active";
+    }
 
     // =====================================
     // CHECK ADMIN PERMISSION
@@ -1032,6 +1098,9 @@ public class NoticeManagementPanel extends JPanel {
         targetRoleCombo.setSelectedItem(
                 "ALL"
         );
+
+        fromDateField.setText(LocalDate.now().toString());
+        toDateField.setText(LocalDate.now().plusDays(7).toString());
 
         postedDateLabel.setText(
                 "Automatically generated"

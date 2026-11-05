@@ -17,7 +17,10 @@ public class NoticeBoardDAOImpl implements NoticeBoardDAO {
     @Override
     public List<NoticeItem> getNoticesForRole(String role) throws DatabaseException {
         List<NoticeItem> list = new ArrayList<>();
-        String sql = "SELECT * FROM notice WHERE target_role = 'ALL' OR target_role = ? "
+        String sql = "SELECT * FROM notice "
+                + "WHERE (target_role = 'ALL' OR target_role = ?) "
+                + "AND (from_date IS NULL OR from_date <= CURDATE()) "
+                + "AND (to_date IS NULL OR to_date >= CURDATE()) "
                 + "ORDER BY posted_date DESC, notice_id DESC";
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {

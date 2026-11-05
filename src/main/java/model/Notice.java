@@ -15,6 +15,8 @@ public class Notice {
     private String content;
     private Timestamp postedDate;
     private String targetRole;
+    private LocalDate fromDate;
+    private LocalDate toDate;
 
     /** Defaults used when the Admin creates a new notice. */
     public Notice() {
@@ -88,6 +90,14 @@ public class Notice {
 
     public String getTargetRole() { return targetRole; }
     public void setTargetRole(String targetRole) { this.targetRole = targetRole; }
+
+    /** First day the notice is visible (inclusive). Null means no start restriction. */
+    public LocalDate getFromDate() { return fromDate; }
+    public void setFromDate(LocalDate fromDate) { this.fromDate = fromDate; }
+
+    /** Last day the notice is visible (inclusive). Null means no end restriction. */
+    public LocalDate getToDate() { return toDate; }
+    public void setToDate(LocalDate toDate) { this.toDate = toDate; }
 
     @Override
     public String toString() {

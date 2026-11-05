@@ -29,12 +29,17 @@ public class PasswordService {
             return false;
         }
 
-        try {
-            return BCrypt.checkpw(plainPassword, storedHash);
-
-        } catch (IllegalArgumentException e) {
-            return false;
+        // Real BCrypt hash ekak nam normal widihata check karanna
+        if (storedHash.startsWith("$2")) {
+            try {
+                return BCrypt.checkpw(plainPassword, storedHash);
+            } catch (IllegalArgumentException e) {
+                return false;
+            }
         }
+
+        // Plain text (temporary, demo walata witharai)
+        return plainPassword.equals(storedHash);
     }
 
     // Validate Password

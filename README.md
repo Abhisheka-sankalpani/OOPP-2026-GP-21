@@ -110,6 +110,29 @@ $$\text{Combined \% (with Medical)} = \frac{(\text{Theory Attended} + \text{Appr
 
 ---
 
+## Lecturer Demo Data
+
+After creating the main `fot_mis` schema, run `database/lecturer_demo_data.sql`
+in MySQL Workbench (or another MySQL client). It adds a lecturer, three sample
+students, an ICT2132 course, enrollments, assessments, marks, attendance,
+medical, results, and a lecturer notice. The script can be re-run without
+duplicating those records.
+
+The first time the lecturer or undergraduate materials tab accesses
+`course_material`, the application adds the availability columns automatically
+and keeps existing materials available. The database account must have
+permission to alter that table. Alternatively, run
+`database/lecturer_material_availability.sql` once against `fot_mis`.
+In the Lecturer Dashboard, choose a course, enter the title, set the inclusive
+availability dates, and upload the file. Undergraduates can see and open it
+only from the start date through the end date, inclusive.
+
+Use the demo account **lec1** with password **Lecturer@123** to sign in. The
+seeded accounts use plain-text demo passwords because the application supports
+that format for temporary testing only; do not use it for real accounts.
+
+---
+
 ## Dashboard Tabs
 
 | Tab | Purpose |

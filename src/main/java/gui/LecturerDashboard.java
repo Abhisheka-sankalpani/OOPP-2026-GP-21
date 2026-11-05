@@ -4,6 +4,7 @@ import dao.AssessmentDAO;
 import dao.AssessmentDAOImpl;
 import dao.CourseMaterialDAO;
 import dao.CourseMaterialDAOImpl;
+import dao.CourseDAO;
 import dao.MarkDAO;
 import dao.MarkDAOImpl;
 import dao.NoticeBoardDAO;
@@ -16,6 +17,7 @@ import dao.LecturerReadOnlyDAO.CourseInfo;
 import exception.DatabaseException;
 import exception.InvalidMarkException;
 import model.Assessment;
+import model.Course;
 import model.LectureMaterial;
 import model.Lecturer;
 import model.Mark;
@@ -38,6 +40,7 @@ import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.text.ParseException;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
@@ -46,6 +49,9 @@ import java.util.Map;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Date;
 
 public class LecturerDashboard extends JFrame {
 
@@ -124,9 +130,11 @@ public class LecturerDashboard extends JFrame {
 
     // Course Materials tab
     private final CourseMaterialDAO materialDAO = new CourseMaterialDAOImpl();
-    private JTextField txtMatCourse;
+    private JComboBox<Course> cmbMatCourse;
     private JTextField txtMatTitle;
     private JTextField txtMatFile;
+    private JSpinner matAvailableFrom;
+    private JSpinner matAvailableTo;
     private File selectedFile;
     private JTable materialTable;
     private DefaultTableModel materialTableModel;
@@ -1241,25 +1249,32 @@ public class LecturerDashboard extends JFrame {
         lblTitle.setFont(new Font("Arial", Font.BOLD, 18));
         panel.add(lblTitle, BorderLayout.NORTH);
 
-        txtMatCourse = new JTextField();
+        cmbMatCourse = new JComboBox<>();
         txtMatTitle = new JTextField();
         txtMatFile = new JTextField();
         txtMatFile.setEditable(false);
+        LocalDate today = LocalDate.now();
+        matAvailableFrom = createDateSpinner(today);
+        matAvailableTo = createDateSpinner(today.plusDays(30));
         JButton btnBrowse = new JButton("Browse...");
 
         JPanel filePanel = new JPanel(new BorderLayout(5, 0));
         filePanel.add(txtMatFile, BorderLayout.CENTER);
         filePanel.add(btnBrowse, BorderLayout.EAST);
 
-        JPanel form = new JPanel(new GridLayout(3, 2, 10, 10));
-        form.add(new JLabel("Course ID (e.g. ICT2132):"));
-        form.add(txtMatCourse);
+        JPanel form = new JPanel(new GridLayout(5, 2, 10, 10));
+        form.add(new JLabel("Course:"));
+        form.add(cmbMatCourse);
         form.add(new JLabel("Title:"));
         form.add(txtMatTitle);
+        form.add(new JLabel("Available from (inclusive):"));
+        form.add(matAvailableFrom);
+        form.add(new JLabel("Available until (inclusive):"));
+        form.add(matAvailableTo);
         form.add(new JLabel("File:"));
         form.add(filePanel);
 
-        String[] columns = {"ID", "Title", "File", "Uploaded"};
+        String[] columns = {"ID", "Course", "Title", "File", "Available From", "Available Until", "Uploaded"};
         materialTableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -1298,7 +1313,37 @@ public class LecturerDashboard extends JFrame {
                 onMaterialSelected();
             }
         });
+        populateMaterialCourses();
         return panel;
+    }
+
+    private JSpinner createDateSpinner(LocalDate initialDate) {
+        Date initialValue = Date.from(initialDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        JSpinner spinner = new JSpinner(new SpinnerDateModel(initialValue, null, null, java.util.Calendar.DAY_OF_MONTH));
+        spinner.setEditor(new JSpinner.DateEditor(spinner, "yyyy-MM-dd"));
+        return spinner;
+    }
+
+    private LocalDate getSelectedDate(JSpinner spinner) throws ParseException {
+        spinner.commitEdit();
+        Date date = (Date) spinner.getValue();
+        return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+    }
+
+    private void setSelectedDate(JSpinner spinner, LocalDate date) {
+        Date value = Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        spinner.setValue(value);
+    }
+
+    private void populateMaterialCourses() {
+        cmbMatCourse.removeAllItems();
+        try {
+            for (Course course : new CourseDAO().getAllCourses()) {
+                cmbMatCourse.addItem(course);
+            }
+        } catch (SQLException ex) {
+            showError(new Exception("Could not load courses for lecture materials.", ex));
+        }
     }
 
     private void browseFile() {
@@ -1313,11 +1358,12 @@ public class LecturerDashboard extends JFrame {
     }
 
     private void loadMaterials() {
-        String courseId = txtMatCourse.getText().trim();
-        if (courseId.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Enter a course ID first.");
+        Course course = (Course) cmbMatCourse.getSelectedItem();
+        if (course == null) {
+            JOptionPane.showMessageDialog(this, "Select a course first.");
             return;
         }
+        String courseId = course.getCourseId();
         try {
             refreshMaterials(courseId);
             if (loadedMaterials.isEmpty()) {
@@ -1334,8 +1380,11 @@ public class LecturerDashboard extends JFrame {
         for (LectureMaterial m : loadedMaterials) {
             materialTableModel.addRow(new Object[]{
                     m.getMaterialId(),
+                    m.getCourseId(),
                     m.getTitle(),
                     FileStorage.displayName(m.getFilePath()),
+                    m.getAvailableFrom(),
+                    m.getAvailableTo(),
                     m.getUploadedDate()
             });
         }
@@ -1344,23 +1393,55 @@ public class LecturerDashboard extends JFrame {
     private void onMaterialSelected() {
         int row = materialTable.getSelectedRow();
         if (row >= 0 && row < loadedMaterials.size()) {
-            txtMatTitle.setText(loadedMaterials.get(row).getTitle());
+            LectureMaterial material = loadedMaterials.get(row);
+            cmbMatCourse.setSelectedItem(findCourse(material.getCourseId()));
+            txtMatTitle.setText(material.getTitle());
+            setSelectedDate(matAvailableFrom, material.getAvailableFrom());
+            setSelectedDate(matAvailableTo, material.getAvailableTo());
             selectedFile = null;
             txtMatFile.setText("");
         }
+    }
+
+    private Course findCourse(String courseId) {
+        for (int i = 0; i < cmbMatCourse.getItemCount(); i++) {
+            Course course = cmbMatCourse.getItemAt(i);
+            if (course.getCourseId().equals(courseId)) {
+                return course;
+            }
+        }
+        return null;
     }
 
     private void clearMaterialForm() {
         txtMatTitle.setText("");
         txtMatFile.setText("");
         selectedFile = null;
+        LocalDate today = LocalDate.now();
+        setSelectedDate(matAvailableFrom, today);
+        setSelectedDate(matAvailableTo, today.plusDays(30));
     }
 
     private void uploadMaterial() {
-        String courseId = txtMatCourse.getText().trim();
+        Course course = (Course) cmbMatCourse.getSelectedItem();
+        String courseId = course == null ? "" : course.getCourseId();
         String title = txtMatTitle.getText().trim();
         if (courseId.isEmpty() || title.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Enter the course ID and a title.");
+            JOptionPane.showMessageDialog(this, "Select a course and enter a title.");
+            return;
+        }
+        LocalDate availableFrom;
+        LocalDate availableTo;
+        try {
+            availableFrom = getSelectedDate(matAvailableFrom);
+            availableTo = getSelectedDate(matAvailableTo);
+        } catch (ParseException ex) {
+            JOptionPane.showMessageDialog(this, "Enter both dates using yyyy-MM-dd format.");
+            return;
+        }
+        if (availableFrom.isAfter(availableTo)) {
+            JOptionPane.showMessageDialog(this,
+                    "The available-from date must be on or before the available-until date.");
             return;
         }
         if (selectedFile == null || !selectedFile.isFile()) {
@@ -1370,7 +1451,8 @@ public class LecturerDashboard extends JFrame {
         try {
             String savedPath = FileStorage.saveCopy(selectedFile, courseId);
             try {
-                materialDAO.addMaterial(new LectureMaterial(0, courseId, title, savedPath, null));
+                materialDAO.addMaterial(new LectureMaterial(0, courseId, title, savedPath, null,
+                        availableFrom, availableTo));
             } catch (DatabaseException ex) {
                 FileStorage.delete(savedPath);   // do not keep a file that is not in the database
                 throw ex;
@@ -1398,6 +1480,20 @@ public class LecturerDashboard extends JFrame {
             return;
         }
         LectureMaterial old = loadedMaterials.get(row);
+        LocalDate availableFrom;
+        LocalDate availableTo;
+        try {
+            availableFrom = getSelectedDate(matAvailableFrom);
+            availableTo = getSelectedDate(matAvailableTo);
+        } catch (ParseException ex) {
+            JOptionPane.showMessageDialog(this, "Enter both dates using yyyy-MM-dd format.");
+            return;
+        }
+        if (availableFrom.isAfter(availableTo)) {
+            JOptionPane.showMessageDialog(this,
+                    "The available-from date must be on or before the available-until date.");
+            return;
+        }
         String newPath = old.getFilePath();
         try {
             boolean replaceFile = selectedFile != null;
@@ -1409,7 +1505,7 @@ public class LecturerDashboard extends JFrame {
                 newPath = FileStorage.saveCopy(selectedFile, old.getCourseId());
             }
             try {
-                materialDAO.updateMaterial(old.getMaterialId(), title, newPath);
+                materialDAO.updateMaterial(old.getMaterialId(), title, newPath, availableFrom, availableTo);
             } catch (DatabaseException ex) {
                 if (replaceFile) {
                     FileStorage.delete(newPath);

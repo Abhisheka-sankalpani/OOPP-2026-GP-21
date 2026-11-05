@@ -1,6 +1,7 @@
 package gui;
 
 import dao.UndergraduateCourseMaterialDAO;
+import exception.DatabaseException;
 import model.CourseMaterial;
 
 import javax.swing.*;
@@ -21,6 +22,7 @@ public class UndergraduateCourseMaterialForm extends JPanel {
     private DefaultTableModel modelMaterial;
     private JLabel lblMaterialSummary;
     private JComboBox<String> cmbCourseFilter;
+    private boolean refreshingCourseFilter;
 
     public UndergraduateCourseMaterialForm(String studentId) {
         this.studentId = studentId;
@@ -31,8 +33,7 @@ public class UndergraduateCourseMaterialForm extends JPanel {
         setBorder(new EmptyBorder(20, 24, 20, 24));
 
         initUI();
-        populateCourseDropdown();
-        loadMaterialData("All Courses");
+        refreshMaterialList();
     }
 
     private void initUI() {
@@ -44,10 +45,7 @@ public class UndergraduateCourseMaterialForm extends JPanel {
         btnOpenFile.addActionListener(e -> openSelectedFile());
 
         JButton btnRefresh = UITheme.createSecondaryButton("Refresh Materials");
-        btnRefresh.addActionListener(e -> {
-            populateCourseDropdown();
-            loadMaterialData(cmbCourseFilter.getSelectedItem() != null ? cmbCourseFilter.getSelectedItem().toString() : "All Courses");
-        });
+        btnRefresh.addActionListener(e -> refreshMaterialList());
 
         topActions.add(btnOpenFile);
         topActions.add(btnRefresh);
@@ -75,8 +73,12 @@ public class UndergraduateCourseMaterialForm extends JPanel {
         cmbCourseFilter.setFont(UITheme.FONT_BODY);
         cmbCourseFilter.setPreferredSize(new Dimension(200, 32));
         cmbCourseFilter.addActionListener(e -> {
-            if (cmbCourseFilter.getSelectedItem() != null) {
-                loadMaterialData(cmbCourseFilter.getSelectedItem().toString());
+            if (!refreshingCourseFilter && cmbCourseFilter.getSelectedItem() != null) {
+                try {
+                    loadMaterialData(cmbCourseFilter.getSelectedItem().toString());
+                } catch (DatabaseException ex) {
+                    showMaterialError(ex);
+                }
             }
         });
 
@@ -85,7 +87,8 @@ public class UndergraduateCourseMaterialForm extends JPanel {
         card.add(filterBar, BorderLayout.NORTH);
 
         // Table
-        String[] colNames = {"Material ID", "Course ID", "Resource Title", "Document File Path", "Uploaded Date"};
+        String[] colNames = {"Material ID", "Course ID", "Resource Title", "Document File Path",
+                "Available From", "Available Until", "Uploaded Date"};
         modelMaterial = new DefaultTableModel(colNames, 0) {
             @Override
             public boolean isCellEditable(int r, int c) {
@@ -101,13 +104,17 @@ public class UndergraduateCourseMaterialForm extends JPanel {
         tableMaterial.getColumnModel().getColumn(1).setPreferredWidth(100);
         tableMaterial.getColumnModel().getColumn(2).setPreferredWidth(260);
         tableMaterial.getColumnModel().getColumn(3).setPreferredWidth(340);
-        tableMaterial.getColumnModel().getColumn(4).setPreferredWidth(150);
+        tableMaterial.getColumnModel().getColumn(4).setPreferredWidth(120);
+        tableMaterial.getColumnModel().getColumn(5).setPreferredWidth(120);
+        tableMaterial.getColumnModel().getColumn(6).setPreferredWidth(150);
 
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
         tableMaterial.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
         tableMaterial.getColumnModel().getColumn(1).setCellRenderer(centerRenderer);
-        tableMaterial.getColumnModel().getColumn(4).setCellRenderer(centerRenderer);
+        for (int column = 4; column < 7; column++) {
+            tableMaterial.getColumnModel().getColumn(column).setCellRenderer(centerRenderer);
+        }
 
         JScrollPane scrollPane = new JScrollPane(tableMaterial);
         scrollPane.setBorder(BorderFactory.createLineBorder(UITheme.COLOR_CARD_BORDER, 1));
@@ -123,30 +130,58 @@ public class UndergraduateCourseMaterialForm extends JPanel {
         add(card, BorderLayout.CENTER);
     }
 
-    private void populateCourseDropdown() {
-        cmbCourseFilter.removeAllItems();
-        cmbCourseFilter.addItem("All Courses");
-
-        List<CourseMaterial> allMaterials = courseMaterialDAO.getAllMaterials();
-        List<String> uniqueCourses = new ArrayList<>();
-
-        for (CourseMaterial m : allMaterials) {
-            if (!uniqueCourses.contains(m.getCourseId())) {
-                uniqueCourses.add(m.getCourseId());
-                cmbCourseFilter.addItem(m.getCourseId());
+    private void refreshMaterialList() {
+        String selectedCourse = cmbCourseFilter.getSelectedItem() == null
+                ? "All Courses" : cmbCourseFilter.getSelectedItem().toString();
+        try {
+            populateCourseDropdown();
+            if (!containsCourse(selectedCourse)) {
+                selectedCourse = "All Courses";
             }
+            refreshingCourseFilter = true;
+            try {
+                cmbCourseFilter.setSelectedItem(selectedCourse);
+            } finally {
+                refreshingCourseFilter = false;
+            }
+            loadMaterialData(selectedCourse);
+        } catch (DatabaseException ex) {
+            showMaterialError(ex);
         }
     }
 
-    private void loadMaterialData(String selectedCourse) {
-        modelMaterial.setRowCount(0);
-        List<CourseMaterial> list;
+    private void populateCourseDropdown() throws DatabaseException {
+        refreshingCourseFilter = true;
+        try {
+            cmbCourseFilter.removeAllItems();
+            cmbCourseFilter.addItem("All Courses");
 
-        if (selectedCourse == null || selectedCourse.equals("All Courses")) {
-            list = courseMaterialDAO.getAllMaterials();
-        } else {
-            list = courseMaterialDAO.getMaterialsByCourse(selectedCourse);
+            List<CourseMaterial> allMaterials = courseMaterialDAO.getAllMaterials();
+            List<String> uniqueCourses = new ArrayList<>();
+            for (CourseMaterial material : allMaterials) {
+                if (!uniqueCourses.contains(material.getCourseId())) {
+                    uniqueCourses.add(material.getCourseId());
+                    cmbCourseFilter.addItem(material.getCourseId());
+                }
+            }
+        } finally {
+            refreshingCourseFilter = false;
         }
+    }
+
+    private boolean containsCourse(String courseId) {
+        for (int i = 0; i < cmbCourseFilter.getItemCount(); i++) {
+            if (cmbCourseFilter.getItemAt(i).equals(courseId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void loadMaterialData(String selectedCourse) throws DatabaseException {
+        modelMaterial.setRowCount(0);
+        List<CourseMaterial> list = courseMaterialDAO.getMaterialsByCourse(
+                selectedCourse == null || selectedCourse.equals("All Courses") ? "ALL" : selectedCourse);
 
         for (CourseMaterial m : list) {
             Object[] row = {
@@ -154,6 +189,8 @@ public class UndergraduateCourseMaterialForm extends JPanel {
                     m.getCourseId(),
                     m.getTitle(),
                     m.getFilePath(),
+                    m.getAvailableFrom(),
+                    m.getAvailableTo(),
                     m.getUploadedDate()
             };
             modelMaterial.addRow(row);
@@ -168,7 +205,22 @@ public class UndergraduateCourseMaterialForm extends JPanel {
             return;
         }
 
-        String filePath = (String) modelMaterial.getValueAt(selectedRow, 3);
+        int modelRow = tableMaterial.convertRowIndexToModel(selectedRow);
+        int materialId = ((Number) modelMaterial.getValueAt(modelRow, 0)).intValue();
+        try {
+            if (!courseMaterialDAO.isMaterialAvailableNow(materialId)) {
+                refreshMaterialList();
+                JOptionPane.showMessageDialog(this,
+                        "This material is outside its viewing period.",
+                        "Material Unavailable", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        } catch (DatabaseException ex) {
+            showMaterialError(ex);
+            return;
+        }
+
+        String filePath = (String) modelMaterial.getValueAt(modelRow, 3);
         if (filePath == null || filePath.trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "No file path available for this material.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
@@ -188,5 +240,10 @@ public class UndergraduateCourseMaterialForm extends JPanel {
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error opening file: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private void showMaterialError(Exception ex) {
+        JOptionPane.showMessageDialog(this, ex.getMessage(),
+                "Course Materials Error", JOptionPane.ERROR_MESSAGE);
     }
 }
